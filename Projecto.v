@@ -374,7 +374,7 @@ Fixpoint exec (instruction : byte * byte) (registers : list byte) : list byte :=
   match instruction with
     |(e1, e2) => let '(a0, (a1, (a2, (a3, (a4, (a5, (a6, a7))))))) := to_bits e1 in
                  let '(b0, (b1, (b2, (b3, (b4, (b5, (b6, b7))))))) := to_bits e2 in 
-                 (*8XY0*)
+                 (*8XY0 - TODO this does not check the rest of the nibble yet. Surely there's a better way to do this?*)
                     if ((Bool.eqb a7 true) && (Bool.eqb b0 false)) then I8XY0 instruction registers else [xde;xad;xbe;xef]
   end.
   
