@@ -42,6 +42,27 @@ Inductive nibble :=
   |ne
   |nf.
 
+Definition nib_eq (n1 n2 : nibble) : bool :=
+  match n1, n2 with
+    |n0 ,n0 => true
+    |n1 ,n1 => true
+	  |n2 ,n2 => true
+	  |n3 ,n3 => true
+	  |n4 ,n4 => true
+	  |n5 ,n5 => true
+  	|n6 ,n6 => true
+  	|n7 ,n7 => true
+	  |n8 ,n8 => true
+  	|n9 ,n9 => true
+  	|na ,na => true
+  	|nb ,nb => true
+  	|nc ,nc => true
+  	|nd ,nd => true
+  	|ne ,ne => true
+  	|nf ,nf => true
+  	|_, _ => false
+  end.
+  
 Definition n_to_nat (n : nibble) : nat :=
   match n with
   |n0 => 0
@@ -404,16 +425,17 @@ Definition I8XY0 (instruction : byte * byte) (registers : list byte) : list byte
                  let vX := n_to_nat n2 in
                  let (n3, n4) := byte_to_nib b2 in
                  let vY := n_to_nat n3 in
+                  (* nth function requires a default value. I think we should replace it with nth_error for now to help in debugging.*)
                   write_memory (nth vY registers x00) vX registers
   end.
 
 
 Fixpoint exec (instruction : byte * byte) (registers : list byte) : list byte :=
   match instruction with
-    |(e1, e2) => let '(a0, (a1, (a2, (a3, (a4, (a5, (a6, a7))))))) := to_bits e1 in
-                 let '(b0, (b1, (b2, (b3, (b4, (b5, (b6, b7))))))) := to_bits e2 in 
-                 (*8XY0 - TODO this does not check the rest of the nibble yet. Surely there's a better way to do this?*)
-                    if ((Bool.eqb a7 true) && (Bool.eqb b0 false)) then I8XY0 instruction registers else [xde;xad;xbe;xef]
+    |(e1, e2) => let (l_nib1, r_nib1) := byte_to_nib' e1 in
+                 let (l_nib2, r_nib2) := byte_to_nib' e2 in 
+                 (*8XY0 - Much more readable now in my opinion*)
+                    if ((nib_eq l_nib1 n8) && (nib_eq r_nib2 n0)) then I8XY0 instruction registers else [xde;xad;xbe;xef]
   end.
   
 
