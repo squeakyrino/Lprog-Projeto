@@ -62,28 +62,28 @@ Definition n_to_nat (n : nibble) : nat :=
   |nf => 15
   end.
 
-Definition nat_to_n (n : nat) : option nibble :=
+Definition nat_to_n (n : nat) : nibble :=
   match n with
-  |0  => Some n0
-  |1  => Some n1
-  |2  => Some n2
-  |3  => Some n3
-  |4  => Some n4
-  |5  => Some n5
-  |6  => Some n6
-  |7  => Some n7
-  |8  => Some n8
-  |9  => Some n9
-  |10 => Some na
-  |11 => Some nb
-  |12 => Some nc
-  |13 => Some nd
-  |14 => Some ne
-  |15 => Some nf
-  | _ => None              
+  |0  => n0
+  |1  => n1
+  |2  => n2
+  |3  => n3
+  |4  => n4
+  |5  => n5
+  |6  => n6
+  |7  => n7
+  |8  => n8
+  |9  => n9
+  |10 => na
+  |11 => nb
+  |12 => nc
+  |13 => nd
+  |14 => ne
+  |15 => nf
+  | _ => n0
   end.
 
-Definition byte_to_nib' (data : byte) : (option nibble * option nibble) := 
+Definition byte_to_nib' (data : byte) : (nibble * nibble) := 
   match to_bits data with
   | (a,(b,(c,(d,(e,(f,(g,h))))))) =>
     let l_nibble_as_byte := of_bits (e,(f,(g,(h,(false,(false,(false,(false)))))))) in 
@@ -353,13 +353,11 @@ Definition byte_to_nib (data : byte) : (nibble * nibble) :=
      | xff => (nf, nf)
      end.
 
-Lemma byte_to_nib_equality : forall b n1 n2,
-    byte_to_nib' b = (Some n1, Some n2) ->
-    byte_to_nib  b = (n1,n2).
+Lemma byte_to_nib_equality : forall b,
+    byte_to_nib' b = byte_to_nib b.
 Proof.
-  unfold byte_to_nib' ; intros.
-  destruct b ; simpl in H ; inversion H ; auto.
-  + simpl. subst.
+  unfold byte_to_nib' ; intros ; destruct b ; simpl ; auto.
+Qed.
   
 End HelperDataTypes.
 
