@@ -1,4 +1,14 @@
 .*.aux
+*.bbl
+*.blg
+*.aux
+*.log
+*.gz
+*~
+.#*
+*#
+#*
+*.aux
 .*.d
 *.a
 *.cma
