@@ -1,6 +1,7 @@
 Require Import Coq.Init.Byte Coq.Strings.Byte Coq.Bool.Bvector.
 Require Import Coq.Lists.List.
 Require Import Coq.Strings.Byte.
+Require Import Coq.Init.Nat.
 Import ListNotations.
 
 (*
@@ -42,26 +43,7 @@ Inductive nibble :=
   |ne
   |nf.
 
-Definition nib_eq (n1 n2 : nibble) : bool :=
-  match n1, n2 with
-    |n0 ,n0 => true
-    |n1 ,n1 => true
-	  |n2 ,n2 => true
-	  |n3 ,n3 => true
-	  |n4 ,n4 => true
-	  |n5 ,n5 => true
-  	|n6 ,n6 => true
-  	|n7 ,n7 => true
-	  |n8 ,n8 => true
-  	|n9 ,n9 => true
-  	|na ,na => true
-  	|nb ,nb => true
-  	|nc ,nc => true
-  	|nd ,nd => true
-  	|ne ,ne => true
-  	|nf ,nf => true
-  	|_, _ => false
-  end.
+
   
 Definition n_to_nat (n : nibble) : nat :=
   match n with
@@ -83,6 +65,11 @@ Definition n_to_nat (n : nibble) : nat :=
   |nf => 15
   end.
 
+Check eqb.
+
+Definition nib_eq (n1 n2 : nibble) : bool :=
+  eqb (n_to_nat n1) (n_to_nat n2).
+  
 Definition nat_to_n (n : nat) : nibble :=
   match n with
   |0  => n0
