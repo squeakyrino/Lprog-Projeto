@@ -91,14 +91,15 @@ Definition nat_to_n (n : nat) : nibble :=
   | _ => n0
   end.
 
+Definition nibble_of_bits :=
+  fun n => nat_to_n (to_nat (of_bits n)).
+
 Definition byte_to_nib' (data : byte) : (nibble * nibble) := 
   match to_bits data with
   | (a,(b,(c,(d,(e,(f,(g,h))))))) =>
-    let l_nibble_as_byte := of_bits (e,(f,(g,(h,(false,(false,(false,(false)))))))) in 
-    let r_nibble_as_byte := of_bits (a,(b,(c,(d,(false,(false,(false,(false)))))))) in
-    let l_nibble_as_nat := to_nat l_nibble_as_byte in 
-    let r_nibble_as_nat := to_nat r_nibble_as_byte in 
-    (nat_to_n l_nibble_as_nat, nat_to_n r_nibble_as_nat)
+    let low  := (e,(f,(g,(h,(false,(false,(false,(false)))))))) in 
+    let high := (a,(b,(c,(d,(false,(false,(false,(false)))))))) in
+    (nibble_of_bits low, nibble_of_bits high)
   end.
 
 Definition byte_to_nib (data : byte) : (nibble * nibble) :=
@@ -364,7 +365,7 @@ Definition byte_to_nib (data : byte) : (nibble * nibble) :=
 Lemma byte_to_nib_equality : forall b,
     byte_to_nib' b = byte_to_nib b.
 Proof.
-  unfold byte_to_nib' ; intros ; destruct b ; simpl ; auto.
+  intros ; destruct b ; simpl ; auto.
 Qed.
   
 End HelperDataTypes.
