@@ -453,6 +453,36 @@ Definition I8XY1 (instruction : byte * byte) (registers : list byte) : list byte
                   write_memory or_x_y_as_byte vX registers
   end.
 
+Definition I8XY2 (instruction : byte * byte) (registers : list byte) : list byte :=
+  match instruction with
+    |(b1, b2) => let (n1, n2) := byte_to_nib b1 in
+                 let vX := n_to_nat n2 in
+                 let (n3, n4) := byte_to_nib b2 in
+                 let vY := n_to_nat n3 in
+                 let register_y_value := (nth vY registers x00) in 
+                 let register_x_value := (nth vX registers x00) in
+                 let y_value_as_Bvector := byte_to_Bvector register_y_value in 
+                 let x_value_as_Bvector := byte_to_Bvector register_x_value in
+                 let or_x_y_as_Bvector := y_value_as_Bvector ^& x_value_as_Bvector in 
+                 let or_x_y_as_byte := Bvector_to_byte or_x_y_as_Bvector in 
+                  write_memory or_x_y_as_byte vX registers
+  end.
+
+Definition I8XY3 (instruction : byte * byte) (registers : list byte) : list byte :=
+  match instruction with
+    |(b1, b2) => let (n1, n2) := byte_to_nib b1 in
+                 let vX := n_to_nat n2 in
+                 let (n3, n4) := byte_to_nib b2 in
+                 let vY := n_to_nat n3 in
+                 let register_y_value := (nth vY registers x00) in 
+                 let register_x_value := (nth vX registers x00) in
+                 let y_value_as_Bvector := byte_to_Bvector register_y_value in 
+                 let x_value_as_Bvector := byte_to_Bvector register_x_value in
+                 let or_x_y_as_Bvector := BVxor 8 y_value_as_Bvector x_value_as_Bvector in 
+                 let or_x_y_as_byte := Bvector_to_byte or_x_y_as_Bvector in 
+                  write_memory or_x_y_as_byte vX registers
+  end.
+
 (*6XNN - Sets VX to NN.*)
 Definition I6XNN (instruction : byte * byte) (registers : list byte) : list byte :=
   match instruction with
@@ -497,7 +527,9 @@ Fixpoint exec'' (instruction : byte * byte) (registers : list byte) : list byte 
   |(e1, e2) =>
    match byte_to_nib' e1, byte_to_nib' e2 with
    | (n8,_),(_,n0) => I8XY0 instruction registers                            
-   | (n8,_),(_,n1) => I8XY1 instruction registers
+   | (n8,_),(_,n1) => I8XY1 instruction registers                          
+   | (n8,_),(_,n2) => I8XY2 instruction registers                          
+   | (n8,_),(_,n3) => I8XY3 instruction registers
    | (n6,_),(_, _) => I6XNN instruction registers
    |  _    ,    _  => [xde;xad;xbe;xef]
    end
@@ -516,9 +548,9 @@ Compute exec (x82, x00) registersWritten.
 Compute exec (x00, x00) registers.
 
 (*Check or*)
-Definition registersWrittenTwice := write_memory xa0 1 registersWritten.
+Definition registersWrittenTwice := write_memory x8f 1 registersWritten.
 Compute registersWrittenTwice.
-Compute exec'' (x81, x01) registersWrittenTwice.
+Compute exec'' (x80, x13) registersWrittenTwice.
 
 Compute map to_nat (exec (x61, x09) registers).
 
