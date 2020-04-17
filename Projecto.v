@@ -396,9 +396,6 @@ Fixpoint write_memory (data : byte) (address : nat) (ram : list byte) : list byt
   
 End MainMemory.
 
-Compute (Bcons true 1 (Bcons false 0 Bnil)). 
-Check map.
-
 Definition byte_to_Bvector (b : byte) : Bvector 8 :=
   match to_bits b with 
   | (a,(b,(c,(d,(e,(f,(g,h))))))) =>
@@ -451,7 +448,7 @@ Definition I8XY1 (instruction : byte * byte) (registers : list byte) : list byte
                  let register_x_value := (nth vX registers x00) in
                  let y_value_as_Bvector := byte_to_Bvector register_y_value in 
                  let x_value_as_Bvector := byte_to_Bvector register_x_value in
-                 let or_x_y_as_Bvector := y_value_as_Bvector ^& x_value_as_Bvector in 
+                 let or_x_y_as_Bvector := y_value_as_Bvector ^| x_value_as_Bvector in 
                  let or_x_y_as_byte := Bvector_to_byte or_x_y_as_Bvector in 
                   write_memory or_x_y_as_byte vX registers
   end.
@@ -489,11 +486,22 @@ Fixpoint exec' (instruction : byte * byte) (registers : list byte) : list byte :
 Theorem exec_equality : forall w lb,
     exec w lb = exec' w lb.
 Proof.
-  intros. destruct w.
+  intros ; destruct w.
   unfold exec, exec' ; destruct b ; simpl ; try reflexivity ; 
     try (destruct (byte_to_nib' b0) ; reflexivity) ;
        try (destruct b0 ; reflexivity).
 Qed.
+
+Fixpoint exec'' (instruction : byte * byte) (registers : list byte) : list byte :=
+  match instruction with
+  |(e1, e2) =>
+   match byte_to_nib' e1, byte_to_nib' e2 with
+   | (n8,_),(_,n0) => I8XY0 instruction registers                            
+   | (n8,_),(_,n1) => I8XY1 instruction registers
+   | (n6,_),(_, _) => I6XNN instruction registers
+   |  _    ,    _  => [xde;xad;xbe;xef]
+   end
+  end.
 
 End InstructionSet.
 
@@ -502,8 +510,15 @@ Import InstructionSet.
 Definition registers := init_memory' 16.
 Definition registersWritten := write_memory x99 0 registers.
 
+Compute registers.
+Compute registersWritten.
 Compute exec (x82, x00) registersWritten.
 Compute exec (x00, x00) registers.
+
+(*Check or*)
+Definition registersWrittenTwice := write_memory xa0 1 registersWritten.
+Compute registersWrittenTwice.
+Compute exec'' (x81, x01) registersWrittenTwice.
 
 Compute map to_nat (exec (x61, x09) registers).
 
