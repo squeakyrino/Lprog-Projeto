@@ -449,8 +449,11 @@ Definition I8XY1 (instruction : byte * byte) (registers : list byte) : list byte
                  let vY := n_to_nat n3 in
                  let register_y_value := (nth vY registers x00) in 
                  let register_x_value := (nth vX registers x00) in
-                 let or_x_y :=  in 
-                  write_memory or_x_y vX registers
+                 let y_value_as_Bvector := byte_to_Bvector register_y_value in 
+                 let x_value_as_Bvector := byte_to_Bvector register_x_value in
+                 let or_x_y_as_Bvector := y_value_as_Bvector ^& x_value_as_Bvector in 
+                 let or_x_y_as_byte := Bvector_to_byte or_x_y_as_Bvector in 
+                  write_memory or_x_y_as_byte vX registers
   end.
 
 (*6XNN - Sets VX to NN.*)
@@ -472,9 +475,25 @@ Fixpoint exec (instruction : byte * byte) (registers : list byte) : list byte :=
                     if (nib_eq l_nib1 n6) then I6XNN instruction registers else
                     [xde;xad;xbe;xef]
   end.
-  
 
+Fixpoint exec' (instruction : byte * byte) (registers : list byte) : list byte :=
+  match instruction with
+  |(e1, e2) =>
+   match byte_to_nib' e1, byte_to_nib' e2 with
+   | (n8,_),(_,n0) => I8XY0 instruction registers
+   | (n6,_),(_, _) => I6XNN instruction registers
+   |  _    ,    _  => [xde;xad;xbe;xef]
+   end
+  end.
 
+Theorem exec_equality : forall w lb,
+    exec w lb = exec' w lb.
+Proof.
+  intros. destruct w.
+  unfold exec, exec' ; destruct b ; simpl ; try reflexivity ; 
+    try (destruct (byte_to_nib' b0) ; reflexivity) ;
+       try (destruct b0 ; reflexivity).
+Qed.
 
 End InstructionSet.
 
