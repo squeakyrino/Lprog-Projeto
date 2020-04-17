@@ -1,8 +1,8 @@
 Require Import Coq.Init.Byte Coq.Strings.Byte Coq.Bool.Bvector.
 Require Import Coq.Lists.List.
-Require Import Coq.Strings.Byte.
 Require Import Coq.Init.Nat.
 Import ListNotations.
+Import BvectorNotations.
 
 (*
  We'll be using bytes. Instructions are 2 bytes long and memory/instructions are stored in big-endian format.
@@ -396,13 +396,36 @@ Fixpoint write_memory (data : byte) (address : nat) (ram : list byte) : list byt
   
 End MainMemory.
 
+Compute (Bcons true 1 (Bcons false 0 Bnil)). 
+Check map.
+
+Definition byte_to_Bvector (b : byte) : Bvector 8 :=
+  match to_bits b with 
+  | (a,(b,(c,(d,(e,(f,(g,h))))))) =>
+    [a;b;c;d;e;f;g;h]%vector
+  end.
+
+Definition Bvector_to_byte (bv : Bvector 8) : byte :=
+  match bv with 
+    | [a;b;c;d;e;f;g;h]%vector => 
+      of_bits (a,(b,(c,(d,(e,(f,(g,h)))))))
+    | _ => x00
+  end.
+
+Theorem byte_to_Bvector_inverse : forall b,
+    Bvector_to_byte (byte_to_Bvector b) = b.
+Proof.
+  intros.
+  unfold Bvector_to_byte, byte_to_Bvector.
+  destruct b ; simpl ; reflexivity.
+Qed.
+  
 Import MainMemory.
 
 Definition test := write_memory x10 1 init_memory.
 Definition test2 := write_memory x23 3 test.
 
 Compute map to_nat (firstn 10 test2).
-
 
 Module InstructionSet.
 Import HelperDataTypes.
@@ -415,6 +438,19 @@ Definition I8XY0 (instruction : byte * byte) (registers : list byte) : list byte
                  let vY := n_to_nat n3 in
                   (* nth function requires a default value. I think we should replace it with nth_error for now to help in debugging.*)
                   write_memory (nth vY registers x00) vX registers
+  end.
+
+(*Sets VX to VX or VY. (Bitwise OR operation) *)
+Definition I8XY1 (instruction : byte * byte) (registers : list byte) : list byte :=
+  match instruction with
+    |(b1, b2) => let (n1, n2) := byte_to_nib b1 in
+                 let vX := n_to_nat n2 in
+                 let (n3, n4) := byte_to_nib b2 in
+                 let vY := n_to_nat n3 in
+                 let register_y_value := (nth vY registers x00) in 
+                 let register_x_value := (nth vX registers x00) in
+                 let or_x_y :=  in 
+                  write_memory or_x_y vX registers
   end.
 
 (*6XNN - Sets VX to NN.*)
