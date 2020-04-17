@@ -416,13 +416,24 @@ Definition I8XY0 (instruction : byte * byte) (registers : list byte) : list byte
                   write_memory (nth vY registers x00) vX registers
   end.
 
+(*6XNN - Sets VX to NN.*)
+Definition I6XNN (instruction : byte * byte) (registers : list byte) : list byte :=
+  match instruction with
+    |(b1, b2) => let (n1, n2) := byte_to_nib b1 in
+                 let vX := n_to_nat n2 in
+                 let (n3, n4) := byte_to_nib b2 in
+                 let vY := n_to_nat n3 in
+                  write_memory b2 vX registers
+  end.                  
 
 Fixpoint exec (instruction : byte * byte) (registers : list byte) : list byte :=
   match instruction with
     |(e1, e2) => let (l_nib1, r_nib1) := byte_to_nib' e1 in
                  let (l_nib2, r_nib2) := byte_to_nib' e2 in 
                  (*8XY0 - Much more readable now in my opinion*)
-                    if ((nib_eq l_nib1 n8) && (nib_eq r_nib2 n0)) then I8XY0 instruction registers else [xde;xad;xbe;xef]
+                    if ((nib_eq l_nib1 n8) && (nib_eq r_nib2 n0)) then I8XY0 instruction registers else 
+                    if (nib_eq l_nib1 n6) then I6XNN instruction registers else
+                    [xde;xad;xbe;xef]
   end.
   
 
@@ -438,3 +449,6 @@ Definition registersWritten := write_memory x99 0 registers.
 Compute exec (x82, x00) registersWritten.
 Compute exec (x00, x00) registers.
 
+Compute map to_nat (exec (x61, x09) registers).
+
+  
