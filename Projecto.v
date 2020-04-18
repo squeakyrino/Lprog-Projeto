@@ -427,6 +427,25 @@ Compute map to_nat (firstn 10 test2).
 Module InstructionSet.
 Import HelperDataTypes.
 
+
+(*7XNN - 	Adds NN to VX. (Carry flag is not changed)*)
+Definition I7XNN (instruction : byte * byte) (registers : list byte) : list byte :=
+  match instruction with
+    |(b1, b2) => let (n1, n2) := byte_to_nib b1 in
+                 let vX := n_to_nat n2 in
+                 (* Another use of nth. Read the value from register VX in nat*)
+                 let numVX := to_nat (nth vX registers x00) in
+                 let numNN := to_nat b2 in
+                 let addition := modulo (numVX + numNN) 256 in
+                   match of_nat addition with
+                   (*TODO - there has to be a better way to do this since addition should never be above 256 because of modulo*)
+                    |None => registers
+                    (*write to VX*)
+                    |Some x => write_memory x vX registers
+                    end
+  end.
+
+
 Definition I8XY0 (instruction : byte * byte) (registers : list byte) : list byte :=
   match instruction with
     |(b1, b2) => let (n1, n2) := byte_to_nib b1 in
@@ -530,7 +549,8 @@ Fixpoint exec'' (instruction : byte * byte) (registers : list byte) : list byte 
    | (n8,_),(_,n1) => I8XY1 instruction registers                          
    | (n8,_),(_,n2) => I8XY2 instruction registers                          
    | (n8,_),(_,n3) => I8XY3 instruction registers
-   | (n6,_),(_, _) => I6XNN instruction registers
+   | (n6,_),(_,_)  => I6XNN instruction registers
+   | (n7,_),(_,_)  => I7XNN instruction registers
    |  _    ,    _  => [xde;xad;xbe;xef]
    end
   end.
@@ -552,6 +572,7 @@ Definition registersWrittenTwice := write_memory x8f 1 registersWritten.
 Compute registersWrittenTwice.
 Compute exec'' (x80, x13) registersWrittenTwice.
 
-Compute map to_nat (exec (x61, x09) registers).
+(* Adding NN to vX. Example with and without overflow*)
+Compute map to_nat (exec'' (x71, x01) (exec'' (x61, x09) registers)).
+Compute map to_nat (exec'' (x71, xff) (exec'' (x61, x02) registers)).
 
-  
