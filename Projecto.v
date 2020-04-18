@@ -502,6 +502,34 @@ Definition I8XY3 (instruction : byte * byte) (registers : list byte) : list byte
                   write_memory or_x_y_as_byte vX registers
   end.
 
+(*8XY4 - Adds VY to VX. VF is set to 1 when there's a carry, and to 0 when there isn't.*)
+Definition I8XY4 (instruction : byte * byte) (registers : list byte) : list byte :=
+match instruction with
+    |(b1, b2) => let (n1, n2) := byte_to_nib b1 in
+                 let vX := n_to_nat n2 in
+                 let (n3, n4) := byte_to_nib b2 in
+                 let vY := n_to_nat n3 in
+                 (* Another use of nth. Read the value from register VX in nat*)
+                 let numVX := to_nat (nth vX registers x00) in
+                 let numVY := to_nat (nth vY registers x00) in
+                 let addition := numVX + numVY in
+                 let mod_addition := modulo addition 256 in
+                 match of_nat mod_addition with
+                              |Some x =>  match of_nat addition with
+                                          (*If we get a None that means there was overflow, set VF to 1*)
+                                          |None => write_memory x vX (write_memory x01 15 registers)
+                                          (*Else put VF to 0*)
+                                          |Some _ => write_memory x vX (write_memory x00 15 registers)
+                                          end
+                                          
+                              (*TODO - refactor this one out. Think of a better way to structure this*)
+                              |_ => registers
+                              end
+  end.
+
+
+
+
 (*6XNN - Sets VX to NN.*)
 Definition I6XNN (instruction : byte * byte) (registers : list byte) : list byte :=
   match instruction with
@@ -551,6 +579,7 @@ Fixpoint exec'' (instruction : byte * byte) (registers : list byte) : list byte 
    | (n8,_),(_,n3) => I8XY3 instruction registers
    | (n6,_),(_,_)  => I6XNN instruction registers
    | (n7,_),(_,_)  => I7XNN instruction registers
+   | (n8,_),(_,n4) => I8XY4 instruction registers
    |  _    ,    _  => [xde;xad;xbe;xef]
    end
   end.
@@ -570,9 +599,18 @@ Compute exec (x00, x00) registers.
 (*Check or*)
 Definition registersWrittenTwice := write_memory x8f 1 registersWritten.
 Compute registersWrittenTwice.
+
 Compute exec'' (x80, x13) registersWrittenTwice.
 
 (* Adding NN to vX. Example with and without overflow*)
 Compute map to_nat (exec'' (x71, x01) (exec'' (x61, x09) registers)).
 Compute map to_nat (exec'' (x71, xff) (exec'' (x61, x02) registers)).
 
+(*I8XY4 - Add v1 to v0 *)
+(*With overflow*)
+Compute map to_nat registersWrittenTwice.
+Compute map to_nat (exec'' (x80, x14) registersWrittenTwice).
+
+(*Without overflow*)
+Compute map to_nat (exec'' (x61, x09) registers).
+Compute map to_nat (exec'' (x80, x14) (exec'' (x61, x09) registers)).
