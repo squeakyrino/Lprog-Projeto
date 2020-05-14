@@ -65,8 +65,6 @@ Definition n_to_nat (n : nibble) : nat :=
   |nf => 15
   end.
 
-Check eqb.
-
 Definition nib_eq (n1 n2 : nibble) : bool :=
   eqb (n_to_nat n1) (n_to_nat n2).
   
@@ -101,6 +99,39 @@ Definition byte_to_nib' (data : byte) : (nibble * nibble) :=
     let high := (a,(b,(c,(d,(false,(false,(false,(false)))))))) in
     (nibble_of_bits low, nibble_of_bits high)
   end.
+
+Local Notation "0" := false.
+Local Notation "1" := true.
+
+Definition n_to_bits (n : nibble) : bool * (bool * (bool * bool)) :=
+  match n with
+    |n0 => (0, (0 ,(0 , 0)))
+    |n1 => (1 ,(0 ,(0 , 0)))
+    |n2 => (0 ,(1 ,(0 , 0)))
+    |n3 => (1 ,(1 ,(0 , 0)))
+    |n4 => (0 ,(0 ,(1 , 0)))
+    |n5 => (1 ,(0 ,(1 , 0)))
+    |n6 => (0 ,(1 ,(1 , 0)))
+    |n7 => (1 ,(1 ,(1 , 0)))
+    |n8 => (0 ,(0 ,(0 , 1)))
+    |n9 => (1 ,(0 ,(0 , 1)))
+    |na => (0 ,(1 ,(0 , 1)))
+    |nb => (1 ,(1 ,(0 , 1)))
+    |nc => (0 ,(0 ,(1 , 1)))
+    |nd => (1 ,(0 ,(1 , 1)))
+    |ne => (0 ,(1 ,(1 , 1)))
+    |nf => (1 ,(1 ,(1 , 1)))
+  end.
+
+
+Definition nib_to_byte (nib_pair : (nibble * nibble)) : byte := 
+  match nib_pair with
+  | (nHigh, nLow) =>
+      let '(a, (b, (c, d))) := n_to_bits nHigh in
+      let '(e, (f, (g, h))) := n_to_bits nLow in
+        of_bits (e,(f,(g,(h,(a,(b,(c,d)))))))
+  end.
+
 
 Definition byte_to_nib (data : byte) : (nibble * nibble) :=
    match data with
@@ -424,8 +455,51 @@ Definition test2 := write_memory x23 3 test.
 
 Compute map to_nat (firstn 10 test2).
 
+Module MainSystem.
+
+Record CHIP8 : Set := makeCHIP8  {
+  pc : (byte * byte); (* Program Counter *)
+  i : (byte * byte);  (* I register *)
+  registers : list byte; (* 16 registers - TODO check if we can limit the length to be 16 always*)
+  stack : list byte; (* 16 level stack *)
+  stackPointer : nat;
+  ram : list byte; (* Program instructions*) 
+}.
+
+
+
+End MainSystem.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 Module InstructionSet.
-Import HelperDataTypes.
+Import HelperDataTypes MainSystem.
+
+(*1NNN - Jumps to address NNN.*)
+Definition I1NNN (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
+  match system with
+    |{|pc := pc'; i := i'; registers := registers'; stack := stack'; stackPointer := stackPointer'; ram := ram'|} =>
+      match instruction with
+        |(b1, b2) => let (n1, n2) := byte_to_nib b1 in
+                    let newB1 := (n0, n2) in 
+                    {|pc := ((nib_to_byte newB1), b2); i := i'; registers := registers'; 
+                      stack := stack'; stackPointer := stackPointer'; ram := ram'|}
+      end
+    end.
+
+
 
 
 (*7XNN - 	Adds NN to VX. (Carry flag is not changed)*)
@@ -560,6 +634,11 @@ Fixpoint exec' (instruction : byte * byte) (registers : list byte) : list byte :
    end
   end.
 
+
+
+
+
+
 Theorem exec_equality : forall w lb,
     exec w lb = exec' w lb.
 Proof.
@@ -584,17 +663,25 @@ Fixpoint exec'' (instruction : byte * byte) (registers : list byte) : list byte 
    end
   end.
 
+(*
+Fixpoint exec_step (system : CHIP8) (step : nat) : CHIP8 :=
+  match nat with
+    |O => system
+    |S step' => exec_ste  
+  *)
+
+
 End InstructionSet.
 
 Import InstructionSet.
 
-Definition registers := init_memory' 16.
-Definition registersWritten := write_memory x99 0 registers.
+Definition registersStart := init_memory' 16.
+Definition registersWritten := write_memory x99 0 registersStart.
 
-Compute registers.
+Compute registersStart.
 Compute registersWritten.
 Compute exec (x82, x00) registersWritten.
-Compute exec (x00, x00) registers.
+Compute exec (x00, x00) registersStart.
 
 (*Check or*)
 Definition registersWrittenTwice := write_memory x8f 1 registersWritten.
@@ -603,8 +690,8 @@ Compute registersWrittenTwice.
 Compute exec'' (x80, x13) registersWrittenTwice.
 
 (* Adding NN to vX. Example with and without overflow*)
-Compute map to_nat (exec'' (x71, x01) (exec'' (x61, x09) registers)).
-Compute map to_nat (exec'' (x71, xff) (exec'' (x61, x02) registers)).
+Compute map to_nat (exec'' (x71, x01) (exec'' (x61, x09) registersStart)).
+Compute map to_nat (exec'' (x71, xff) (exec'' (x61, x02) registersStart)).
 
 (*I8XY4 - Add v1 to v0 *)
 (*With overflow*)
@@ -612,5 +699,12 @@ Compute map to_nat registersWrittenTwice.
 Compute map to_nat (exec'' (x80, x14) registersWrittenTwice).
 
 (*Without overflow*)
-Compute map to_nat (exec'' (x61, x09) registers).
-Compute map to_nat (exec'' (x80, x14) (exec'' (x61, x09) registers)).
+Compute map to_nat (exec'' (x61, x09) registersStart).
+Compute map to_nat (exec'' (x80, x14) (exec'' (x61, x09) registersStart)).
+
+Import MainSystem.
+Definition startingState := makeCHIP8 (x00,x00) (x00,x00) registersStart registersStart 0 [].
+
+(* Set PC to x303*)
+Compute I1NNN (x13, x03) startingState.
+
