@@ -8,8 +8,18 @@ From CHIP8 Require Import HelperDataTypes.
 From CHIP8 Require Import MainMemory.
 From CHIP8 Require Import MainSystem.
 
-(*1NNN - Jumps to address NNN.*)
+(*1NNN - Jumps to address NNN. Using record update*)
 Definition I1NNN (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
+  match instruction with
+    |(b1, b2) => let (n1, n2) := byte_to_nib b1 in
+                 let newB1 := (n0, n2) in 
+                 setPC ((nib_to_byte newB1), b2) system
+  end.
+
+
+
+(*1NNN - Jumps to address NNN.*)
+Definition I1NNN' (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
   match system with
     |{|pc := pc'; i := i'; registers := registers'; stack := stack'; stackPointer := stackPointer'; ram := ram'|} =>
       match instruction with
@@ -20,8 +30,35 @@ Definition I1NNN (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
       end
     end.
 
+(* Proving both functions do the same *) 
+Lemma sameI1NNN : forall state instruction,
+  I1NNN' instruction state = I1NNN instruction state.
+Proof.
+intros.
+destruct state.
+auto.
+Qed.
+
+(* 2NNN - Calls subroutine at NNN. *)
+Definition I2NNN (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
+  match instruction with
+    |(b1, b2) => let (n1, n2) := byte_to_nib b1 in
+                 let newB1 := (n0, n2) in 
+                 let resultAddress := ((nib_to_byte newB1), b2) in
+                 (*Push the current address into the stack and then set PC to the new address*)
+                 setPC resultAddress (pushStack system)
+  end.
 
 
+(*6XNN - Sets VX to NN.*)
+Definition I6XNN (instruction : byte * byte) (registers : list byte) : list byte :=
+  match instruction with
+    |(b1, b2) => let (n1, n2) := byte_to_nib b1 in
+                 let vX := n_to_nat n2 in
+                 let (n3, n4) := byte_to_nib b2 in
+                 let vY := n_to_nat n3 in
+                  write_memory b2 vX registers
+  end.   
 
 (*7XNN - 	Adds NN to VX. (Carry flag is not changed)*)
 Definition I7XNN (instruction : byte * byte) (registers : list byte) : list byte :=
@@ -40,7 +77,7 @@ Definition I7XNN (instruction : byte * byte) (registers : list byte) : list byte
                     end
   end.
 
-
+(*8XY0 - Sets VX to the value of VY.*)
 Definition I8XY0 (instruction : byte * byte) (registers : list byte) : list byte :=
   match instruction with
     |(b1, b2) => let (n1, n2) := byte_to_nib b1 in
@@ -122,18 +159,17 @@ match instruction with
                               end
   end.
 
-
-
-
-(*6XNN - Sets VX to NN.*)
-Definition I6XNN (instruction : byte * byte) (registers : list byte) : list byte :=
+(*ANNN - Sets I to the address NNN.*)
+Definition IANNN (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
   match instruction with
     |(b1, b2) => let (n1, n2) := byte_to_nib b1 in
-                 let vX := n_to_nat n2 in
-                 let (n3, n4) := byte_to_nib b2 in
-                 let vY := n_to_nat n3 in
-                  write_memory b2 vX registers
-  end.                  
+                 let newB1 := (n0, n2) in 
+                 let val := ((nib_to_byte newB1), b2) in
+                 setIRegister val system
+  end.
+
+
+               
 
 Fixpoint exec (instruction : byte * byte) (registers : list byte) : list byte :=
   match instruction with

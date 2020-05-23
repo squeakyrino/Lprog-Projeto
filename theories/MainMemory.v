@@ -12,8 +12,9 @@ Fixpoint init_memory' (n : nat) : list byte :=
 Definition init_memory : list byte :=
   init_memory'  4096.
 
-(* nth function to read memory*)
-Fixpoint write_memory (data : byte) (address : nat) (ram : list byte) : list byte :=
+(* Reading memory is done by using the nth function *)
+
+Fixpoint write_memory {A : Type}(data : A) (address : nat) (ram : list A) : list A :=
   match address, ram with
     |0, head :: tail => data :: tail
     |0, [] => []
