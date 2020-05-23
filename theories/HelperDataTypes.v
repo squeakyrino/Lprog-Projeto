@@ -422,11 +422,11 @@ Proof.
   destruct b eqn:E ; simpl ; specialize (word_to_nat_aux b) as H' ;
   rewrite E in H' ; simpl in H' ; rewrite H' ; reflexivity.
 Qed.
-
+(*
 of_nat ((to_nat b) mod 256) = Some b
-
+*)
 Lemma byte_to_nib_equality : forall b,
-    byte_to_nib' b = byte_to_nib b.
+    byte_to_nib' b = byte_to_nib b. 
 Proof.
   intros b.
   destruct b ; auto.

@@ -35,11 +35,11 @@ Compute map to_nat (firstn 10 test2).
 
 Definition registersStart := init_memory' 16.
 Definition registersWritten := write_memory x99 0 registersStart.
-
+(*
 Compute registersStart.
 Compute registersWritten.
-Compute exec (x82, x00) registersWritten.
-Compute exec (x00, x00) registersStart.
+Compute exec'' (x82, x00) registersWritten.
+Compute exec'' (x00, x00) registersStart.
 
 (*Check or*)
 Definition registersWrittenTwice := write_memory x8f 1 registersWritten.
@@ -59,7 +59,7 @@ Compute map to_nat (exec'' (x80, x14) registersWrittenTwice).
 (*Without overflow*)
 Compute map to_nat (exec'' (x61, x09) registersStart).
 Compute map to_nat (exec'' (x80, x14) (exec'' (x61, x09) registersStart)).
-
+*)
 Import MainSystem.
 Definition startingState := makeCHIP8 (x00,x00) (x00,x00) registersStart ((x10, x10) :: []) 0 [].
 
