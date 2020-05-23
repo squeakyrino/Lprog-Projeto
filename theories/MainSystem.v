@@ -1,4 +1,4 @@
-Require Import Coq.Init.Byte Coq.Strings.Byte Coq.Bool.Bvector.
+Require Import Coq.Init.Byte Coq.Strings.Byte Coq.Bool.Bvector Coq.Lists.List Coq.Init.Nat.
 
 From CHIP8 Require Import MainMemory.
 From CHIP8 Require Import HelperDataTypes.
@@ -12,6 +12,9 @@ Record CHIP8 : Set := makeCHIP8  {
   stackPointer : nat;
   ram : list byte; (* Program instructions*) 
 }.
+
+(* This is needed for the record update library *)
+Instance etaX : Settable _ := settable! makeCHIP8 <pc; i; registers; stack; stackPointer; ram>.
 
 Import RecordSetNotations.
 
