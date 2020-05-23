@@ -80,3 +80,6 @@ Compute popStack poppableState.
 (*Pushes the current PC (x00,x00) into the stack 
  overwritting the (x10,x10) that was there previously*)
 Compute pushStack startingState.
+
+(* 2NNN - Testing it. *)
+Compute I2NNN (x20,x12) startingState.

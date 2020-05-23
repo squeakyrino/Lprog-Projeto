@@ -39,6 +39,15 @@ destruct state.
 auto.
 Qed.
 
+(* 2NNN - Calls subroutine at NNN. *)
+Definition I2NNN (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
+  match instruction with
+    |(b1, b2) => let (n1, n2) := byte_to_nib b1 in
+                 let newB1 := (n0, n2) in 
+                 let resultAddress := ((nib_to_byte newB1), b2) in
+                 (*Push the current address into the stack and then set PC to the new address*)
+                 setPC resultAddress (pushStack system)
+  end.
 
 
 
