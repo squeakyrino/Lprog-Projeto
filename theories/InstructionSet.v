@@ -50,6 +50,15 @@ Definition I2NNN (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
   end.
 
 
+(*6XNN - Sets VX to NN.*)
+Definition I6XNN (instruction : byte * byte) (registers : list byte) : list byte :=
+  match instruction with
+    |(b1, b2) => let (n1, n2) := byte_to_nib b1 in
+                 let vX := n_to_nat n2 in
+                 let (n3, n4) := byte_to_nib b2 in
+                 let vY := n_to_nat n3 in
+                  write_memory b2 vX registers
+  end.   
 
 (*7XNN - 	Adds NN to VX. (Carry flag is not changed)*)
 Definition I7XNN (instruction : byte * byte) (registers : list byte) : list byte :=
@@ -68,7 +77,7 @@ Definition I7XNN (instruction : byte * byte) (registers : list byte) : list byte
                     end
   end.
 
-
+(*8XY0 - Sets VX to the value of VY.*)
 Definition I8XY0 (instruction : byte * byte) (registers : list byte) : list byte :=
   match instruction with
     |(b1, b2) => let (n1, n2) := byte_to_nib b1 in
@@ -150,18 +159,17 @@ match instruction with
                               end
   end.
 
-
-
-
-(*6XNN - Sets VX to NN.*)
-Definition I6XNN (instruction : byte * byte) (registers : list byte) : list byte :=
+(*ANNN - Sets I to the address NNN.*)
+Definition IANNN (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
   match instruction with
     |(b1, b2) => let (n1, n2) := byte_to_nib b1 in
-                 let vX := n_to_nat n2 in
-                 let (n3, n4) := byte_to_nib b2 in
-                 let vY := n_to_nat n3 in
-                  write_memory b2 vX registers
-  end.                  
+                 let newB1 := (n0, n2) in 
+                 let val := ((nib_to_byte newB1), b2) in
+                 setIRegister val system
+  end.
+
+
+               
 
 Fixpoint exec (instruction : byte * byte) (registers : list byte) : list byte :=
   match instruction with
