@@ -1,0 +1,6 @@
+-Q theories CHIP8
+theories/HelperDataTypes.v 
+theories/MainMemory.v
+theories/MainSystem.v
+theories/InstructionSet.v
+theories/CHIP8.v
