@@ -19,10 +19,16 @@ Instance etaX : Settable _ := settable! makeCHIP8 <pc; i; registers; stack; stac
 Import RecordSetNotations.
 
 (* Record update helper functions *)
+(*Set PC to a. PC should be of the form (x0N, xNN)*)
 Definition setPC a x := x <|pc := a|>.
 
-Definition popStack x := x <|stackPointer ::= sub 1|> <|pc := nth (sub 1 (x.(stackPointer))) x.(stack) (xde, xad)|>.
+(*Set the I register *)
+Definition setIRegister val x := x <|i := val|>.
 
-(*Push the current PC into the stacl and then increase stackpointer*)
-Definition pushStack x := x <|stackPointer ::= succ|> 
+(*popStack: decrements the stackPointer and puts the program counter equals to the value popped*)
+Definition popStack x := x <|stackPointer ::= sub 1|> 
+                           <|pc := nth (sub 1 (x.(stackPointer))) x.(stack) (xde, xad)|>.
+
+(*Push the current PC into the stack and then increase stackpointer*)
+Definition pushStack (x : CHIP8) := x <|stackPointer ::= succ|> 
                             <|stack := write_memory x.(pc) x.(stackPointer) x.(stack)|>.
