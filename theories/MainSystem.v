@@ -23,6 +23,6 @@ Definition setPC a x := x <|pc := a|>.
 
 Definition popStack x := x <|stackPointer ::= sub 1|> <|pc := nth (sub 1 (x.(stackPointer))) x.(stack) (xde, xad)|>.
 
-(*Update stack and then increase update stackpointer*)
-Definition pushStack (address : (byte * byte)) x := x <|stackPointer ::= succ|> 
-                                                      <|stack := write_memory address x.(stackPointer) x.(stack)|>.
+(*Push the current PC into the stacl and then increase stackpointer*)
+Definition pushStack x := x <|stackPointer ::= succ|> 
+                            <|stack := write_memory x.(pc) x.(stackPointer) x.(stack)|>.

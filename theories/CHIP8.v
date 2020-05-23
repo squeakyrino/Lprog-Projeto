@@ -61,7 +61,7 @@ Compute map to_nat (exec'' (x61, x09) registersStart).
 Compute map to_nat (exec'' (x80, x14) (exec'' (x61, x09) registersStart)).
 
 Import MainSystem.
-Definition startingState := makeCHIP8 (x00,x00) (x00,x00) registersStart [] 0 [].
+Definition startingState := makeCHIP8 (x00,x00) (x00,x00) registersStart ((x10, x10) :: []) 0 [].
 
 (* Set PC to x303*)
 Compute I1NNN (x13, x03) startingState.
@@ -77,4 +77,6 @@ Definition poppableState := makeCHIP8 (x00,x00) (x00,x00) registersStart [(x05, 
 
 Compute popStack poppableState.
 
-Compute pushStack (x09, x09) startingState.
+(*Pushes the current PC (x00,x00) into the stack 
+ overwritting the (x10,x10) that was there previously*)
+Compute pushStack startingState.
