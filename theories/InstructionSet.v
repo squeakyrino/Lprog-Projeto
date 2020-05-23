@@ -51,111 +51,122 @@ Definition I2NNN (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
 
 
 (*6XNN - Sets VX to NN.*)
-Definition I6XNN (instruction : byte * byte) (registers : list byte) : list byte :=
+Definition I6XNN (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
   match instruction with
     |(b1, b2) => let (n1, n2) := byte_to_nib b1 in
                  let vX := n_to_nat n2 in
                  let (n3, n4) := byte_to_nib b2 in
                  let vY := n_to_nat n3 in
-                  write_memory b2 vX registers
+                 let updatedRegisters := write_memory b2 vX system.(registers) in
+                 updateRegisters updatedRegisters system
   end.   
 
 (*7XNN - 	Adds NN to VX. (Carry flag is not changed)*)
-Definition I7XNN (instruction : byte * byte) (registers : list byte) : list byte :=
+Definition I7XNN (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
   match instruction with
     |(b1, b2) => let (n1, n2) := byte_to_nib b1 in
                  let vX := n_to_nat n2 in
                  (* Another use of nth. Read the value from register VX in nat*)
-                 let numVX := to_nat (nth vX registers x00) in
+                 let numVX := to_nat (nth vX system.(registers) x00) in
                  let numNN := to_nat b2 in
                  let addition := modulo (numVX + numNN) 256 in
                    match of_nat addition with
                    (*TODO - there has to be a better way to do this since addition should never be above 256 because of modulo*)
-                    |None => registers
+                    |None => system
                     (*write to VX*)
-                    |Some x => write_memory x vX registers
+                    |Some x => let updatedRegisters := write_memory x vX system.(registers) in
+                                updateRegisters updatedRegisters system
                     end
   end.
 
 (*8XY0 - Sets VX to the value of VY.*)
-Definition I8XY0 (instruction : byte * byte) (registers : list byte) : list byte :=
+Definition I8XY0 (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
   match instruction with
     |(b1, b2) => let (n1, n2) := byte_to_nib b1 in
                  let vX := n_to_nat n2 in
                  let (n3, n4) := byte_to_nib b2 in
                  let vY := n_to_nat n3 in
-                  (* nth function requires a default value. I think we should replace it with nth_error for now to help in debugging.*)
-                  write_memory (nth vY registers x00) vX registers
+                  (* TODO: nth function requires a default value. I think we should replace it with nth_error for now to help in debugging.*)
+                  let updatedRegisters := write_memory (nth vY system.(registers) x00) vX system.(registers) in
+                      updateRegisters updatedRegisters system
   end.
 
 (*Sets VX to VX or VY. (Bitwise OR operation) *)
-Definition I8XY1 (instruction : byte * byte) (registers : list byte) : list byte :=
+Definition I8XY1 (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
   match instruction with
     |(b1, b2) => let (n1, n2) := byte_to_nib b1 in
                  let vX := n_to_nat n2 in
                  let (n3, n4) := byte_to_nib b2 in
                  let vY := n_to_nat n3 in
-                 let register_y_value := (nth vY registers x00) in 
-                 let register_x_value := (nth vX registers x00) in
+                 let register_y_value := (nth vY system.(registers) x00) in 
+                 let register_x_value := (nth vX system.(registers) x00) in
                  let y_value_as_Bvector := byte_to_Bvector register_y_value in 
                  let x_value_as_Bvector := byte_to_Bvector register_x_value in
                  let or_x_y_as_Bvector := y_value_as_Bvector ^| x_value_as_Bvector in 
                  let or_x_y_as_byte := Bvector_to_byte or_x_y_as_Bvector in 
-                  write_memory or_x_y_as_byte vX registers
+                 let updatedRegisters := write_memory or_x_y_as_byte vX system.(registers) in
+                 updateRegisters updatedRegisters system
   end.
-
-Definition I8XY2 (instruction : byte * byte) (registers : list byte) : list byte :=
+  
+(*I8XY2 - Sets VX to VX and VY. (Bitwise AND operation) *)
+Definition I8XY2 (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
   match instruction with
     |(b1, b2) => let (n1, n2) := byte_to_nib b1 in
                  let vX := n_to_nat n2 in
                  let (n3, n4) := byte_to_nib b2 in
                  let vY := n_to_nat n3 in
-                 let register_y_value := (nth vY registers x00) in 
-                 let register_x_value := (nth vX registers x00) in
+                 let register_y_value := (nth vY system.(registers) x00) in 
+                 let register_x_value := (nth vX system.(registers) x00) in
                  let y_value_as_Bvector := byte_to_Bvector register_y_value in 
                  let x_value_as_Bvector := byte_to_Bvector register_x_value in
-                 let or_x_y_as_Bvector := y_value_as_Bvector ^& x_value_as_Bvector in 
-                 let or_x_y_as_byte := Bvector_to_byte or_x_y_as_Bvector in 
-                  write_memory or_x_y_as_byte vX registers
+                 let and_x_y_as_Bvector := y_value_as_Bvector ^& x_value_as_Bvector in 
+                 let and_x_y_as_byte := Bvector_to_byte and_x_y_as_Bvector in 
+                 let updatedRegisters := write_memory and_x_y_as_byte vX system.(registers) in
+                 updateRegisters updatedRegisters system
   end.
-
-Definition I8XY3 (instruction : byte * byte) (registers : list byte) : list byte :=
+  
+(*I8XY3 - Sets VX to VX xor VY.*)
+Definition I8XY3 (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
   match instruction with
     |(b1, b2) => let (n1, n2) := byte_to_nib b1 in
                  let vX := n_to_nat n2 in
                  let (n3, n4) := byte_to_nib b2 in
                  let vY := n_to_nat n3 in
-                 let register_y_value := (nth vY registers x00) in 
-                 let register_x_value := (nth vX registers x00) in
+                 let register_y_value := (nth vY system.(registers) x00) in 
+                 let register_x_value := (nth vX system.(registers) x00) in
                  let y_value_as_Bvector := byte_to_Bvector register_y_value in 
                  let x_value_as_Bvector := byte_to_Bvector register_x_value in
-                 let or_x_y_as_Bvector := BVxor 8 y_value_as_Bvector x_value_as_Bvector in 
-                 let or_x_y_as_byte := Bvector_to_byte or_x_y_as_Bvector in 
-                  write_memory or_x_y_as_byte vX registers
+                 let xor_x_y_as_Bvector := BVxor 8 y_value_as_Bvector x_value_as_Bvector in 
+                 let xor_x_y_as_byte := Bvector_to_byte xor_x_y_as_Bvector in 
+                 let updatedRegisters := write_memory xor_x_y_as_byte vX system.(registers) in
+                 updateRegisters updatedRegisters system
   end.
 
 (*8XY4 - Adds VY to VX. VF is set to 1 when there's a carry, and to 0 when there isn't.*)
-Definition I8XY4 (instruction : byte * byte) (registers : list byte) : list byte :=
+Definition I8XY4 (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
 match instruction with
     |(b1, b2) => let (n1, n2) := byte_to_nib b1 in
                  let vX := n_to_nat n2 in
                  let (n3, n4) := byte_to_nib b2 in
                  let vY := n_to_nat n3 in
                  (* Another use of nth. Read the value from register VX in nat*)
-                 let numVX := to_nat (nth vX registers x00) in
-                 let numVY := to_nat (nth vY registers x00) in
+                 let numVX := to_nat (nth vX system.(registers) x00) in
+                 let numVY := to_nat (nth vY system.(registers) x00) in
                  let addition := numVX + numVY in
                  let mod_addition := modulo addition 256 in
                  match of_nat mod_addition with
+                              (*TODO - refactor this one out. Think of a better way to structure this*)
+                              |None => system
                               |Some x =>  match of_nat addition with
                                           (*If we get a None that means there was overflow, set VF to 1*)
-                                          |None => write_memory x vX (write_memory x01 15 registers)
+                                          |None => let registersWithoutOF := write_memory x vX (write_memory x01 15 system.(registers)) in
+                                                   updateRegisters registersWithoutOF system 
                                           (*Else put VF to 0*)
-                                          |Some _ => write_memory x vX (write_memory x00 15 registers)
+                                          |Some _ => let registersWithOF := write_memory x vX (write_memory x00 15 system.(registers)) in
+                                                     updateRegisters registersWithOF system 
                                           end
                                           
-                              (*TODO - refactor this one out. Think of a better way to structure this*)
-                              |_ => registers
+                              
                               end
   end.
 
@@ -167,9 +178,6 @@ Definition IANNN (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
                  let val := ((nib_to_byte newB1), b2) in
                  setIRegister val system
   end.
-
-
-               
 
 Fixpoint exec (instruction : byte * byte) (registers : list byte) : list byte :=
   match instruction with
