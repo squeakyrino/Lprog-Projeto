@@ -8,6 +8,11 @@ From CHIP8 Require Import HelperDataTypes.
 From CHIP8 Require Import MainMemory.
 From CHIP8 Require Import MainSystem.
 
+(*00EE - Returns from a subroutine. (Also increment the PC)*)
+Definition I00EE (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
+    incrementPCBy2 (popStack system).
+
+
 (*1NNN - Jumps to address NNN. Using record update*)
 Definition I1NNN (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
   match instruction with
@@ -15,8 +20,6 @@ Definition I1NNN (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
                  let newB1 := (n0, n2) in 
                  setPC ((nib_to_byte newB1), b2) system
   end.
-
-
 
 (*1NNN - Jumps to address NNN.*)
 Definition I1NNN' (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
@@ -178,7 +181,7 @@ Definition IANNN (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
                  let val := ((nib_to_byte newB1), b2) in
                  setIRegister val system
   end.
-
+(*
 Fixpoint exec (instruction : byte * byte) (registers : list byte) : list byte :=
   match instruction with
     |(e1, e2) => let (l_nib1, r_nib1) := byte_to_nib' e1 in
@@ -207,19 +210,24 @@ Proof.
     try (destruct (byte_to_nib' b0) ; reflexivity) ;
        try (destruct b0 ; reflexivity).
 Qed.
+*)
 
-Fixpoint exec'' (instruction : byte * byte) (registers : list byte) : list byte :=
+Fixpoint exec'' (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
   match instruction with
   |(e1, e2) =>
    match byte_to_nib' e1, byte_to_nib' e2 with
-   | (n8,_),(_,n0) => I8XY0 instruction registers                            
-   | (n8,_),(_,n1) => I8XY1 instruction registers                          
-   | (n8,_),(_,n2) => I8XY2 instruction registers                          
-   | (n8,_),(_,n3) => I8XY3 instruction registers
-   | (n6,_),(_,_)  => I6XNN instruction registers
-   | (n7,_),(_,_)  => I7XNN instruction registers
-   | (n8,_),(_,n4) => I8XY4 instruction registers
-   |  _    ,    _  => [xde;xad;xbe;xef]
+   | (n0,n0),(ne,ne) => I00EE instruction system
+   | (n1,_),(_,_)  => I1NNN instruction system
+   | (n2,_),(_,_)  => I2NNN instruction system
+   | (n6,_),(_,_)  => I6XNN instruction system
+   | (n7,_),(_,_)  => I7XNN instruction system
+   | (n8,_),(_,n0) => I8XY0 instruction system                            
+   | (n8,_),(_,n1) => I8XY1 instruction system                          
+   | (n8,_),(_,n2) => I8XY2 instruction system                          
+   | (n8,_),(_,n3) => I8XY3 instruction system
+   | (n8,_),(_,n4) => I8XY4 instruction system
+   | (na,_),(_,_)  => IANNN instruction system
+   |  _    ,    _  => system
    end
   end.
 
