@@ -1,5 +1,6 @@
 Require Import Coq.Init.Byte Coq.Strings.Byte Coq.Bool.Bvector.
 Require Import Coq.Init.Nat.
+Require Import Coq.omega.Omega.
 
 Inductive nibble :=
   |n0
@@ -374,6 +375,56 @@ Definition Bvector_to_byte (bv : Bvector 8) : byte :=
     | _ => x00
   end.
 
+Definition word_to_nat (bv : (byte * byte)) : nat :=
+  match bv with
+  | (b1, b2) =>
+    let n1 := to_nat b1 in
+    let n2 := 256 * (to_nat b2) in 
+    n1 + n2
+  end.
+
+Definition nat_to_word (n : nat) : (byte * byte) :=
+  let d := div n 256 in
+  let r := modulo n 256 in
+  match of_nat r with
+  | None => (x00,x00)
+  | Some x1 => 
+    match of_nat d with
+    | None => (x00,x00)
+    | Some x2 => (x1, x2)
+    end
+  end.
+
+Lemma to_nat_less_256 : forall b,
+    to_nat b < 256.
+Proof.
+  intros.
+  destruct b ; simpl ; omega.
+Qed.
+
+Lemma word_to_nat_aux : forall b b0, 
+  of_nat ((to_nat b + to_nat b0 * 256) / 256) = Some b0.
+Proof.
+  intros. Search div. rewrite Nat.div_add ; auto.
+  rewrite Nat.div_small ; [|destruct b ; simpl ; omega].
+  simpl. apply of_to_nat. 
+Qed.
+  
+Lemma word_to_nat_soundness : forall w,
+    nat_to_word (word_to_nat w) = w.
+Proof.
+  intro w. destruct w.
+  unfold word_to_nat.
+  unfold nat_to_word.
+  Search "mod". rewrite PeanoNat.Nat.add_mod ; auto.
+  Search "mod". specialize (PeanoNat.Nat.mod_mul (to_nat b0) 256) as H.
+  rewrite PeanoNat.Nat.mul_comm. rewrite PeanoNat.Nat.mod_mul ; auto.
+  destruct b eqn:E ; simpl ; specialize (word_to_nat_aux b) as H' ;
+  rewrite E in H' ; simpl in H' ; rewrite H' ; reflexivity.
+Qed.
+
+of_nat ((to_nat b) mod 256) = Some b
+
 Lemma byte_to_nib_equality : forall b,
     byte_to_nib' b = byte_to_nib b.
 Proof.
@@ -382,7 +433,7 @@ Proof.
 Qed.
   
 Lemma byte_nibble_soundness : forall b,
-    (byte_to_nib' (nib_to_byte b)) = b.
+    byte_to_nib' (nib_to_byte b) = b.
 Proof.
   intros b. unfold nib_to_byte. unfold byte_to_nib'.
   destruct b eqn:E. destruct n, n10 ; auto.
