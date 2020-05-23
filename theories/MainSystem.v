@@ -25,6 +25,9 @@ Definition setPC a x := x <|pc := a|>.
 (*Set the I register *)
 Definition setIRegister val x := x <|i := val|>.
 
+(*Update the registers*)
+Definition  updateRegisters registers' x := x <|registers := registers'|>.
+
 (*popStack: decrements the stackPointer and puts the program counter equals to the value popped*)
 Definition popStack x := x <|stackPointer ::= sub 1|> 
                            <|pc := nth (sub 1 (x.(stackPointer))) x.(stack) (xde, xad)|>.
