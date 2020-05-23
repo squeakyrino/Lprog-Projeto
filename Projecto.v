@@ -4,6 +4,8 @@ Require Import Coq.Init.Nat.
 Import ListNotations.
 Import BvectorNotations.
 
+From RecordUpdate Require Import RecordSet.
+
 (*
  We'll be using bytes. Instructions are 2 bytes long and memory/instructions are stored in big-endian format.
  
@@ -417,7 +419,7 @@ Definition init_memory : list byte :=
 
 (* nth function to read memory*)
 
-Fixpoint write_memory (data : byte) (address : nat) (ram : list byte) : list byte :=
+Fixpoint write_memory {A : Type}(data : A) (address : nat) (ram : list A) : list A :=
   match address, ram with
     |0, head :: tail => data :: tail
     |0, [] => []
@@ -457,17 +459,25 @@ Compute map to_nat (firstn 10 test2).
 
 Module MainSystem.
 
+
 Record CHIP8 : Set := makeCHIP8  {
   pc : (byte * byte); (* Program Counter *)
   i : (byte * byte);  (* I register *)
   registers : list byte; (* 16 registers - TODO check if we can limit the length to be 16 always*)
-  stack : list byte; (* 16 level stack *)
+  stack : list (byte * byte); (* 16 level stack *)
   stackPointer : nat;
   ram : list byte; (* Program instructions*) 
 }.
 
+Instance etaX : Settable _ := settable! makeCHIP8 <pc; i; registers; stack; stackPointer; ram>.
 
+Import RecordSetNotations.
+Definition setPC a x := x <|pc := a|>.
 
+Definition popStack x := x <|stackPointer ::= sub 1|> <|pc := nth (sub 1 (x.(stackPointer))) x.(stack) (xde, xad)|>.
+(*Update stack and then increase update stackpointer*)
+Definition pushStack (address : (byte * byte)) x := x <|stackPointer ::= succ|> 
+                                                      <|stack := write_memory address x.(stackPointer) x.(stack)|>.
 End MainSystem.
 
 
@@ -487,6 +497,16 @@ End MainSystem.
 Module InstructionSet.
 Import HelperDataTypes MainSystem.
 
+(*1NNN - Jumps to address NNN. Using record update*)
+Definition I1NNN' (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
+  match instruction with
+    |(b1, b2) => let (n1, n2) := byte_to_nib b1 in
+                 let newB1 := (n0, n2) in 
+                 setPC ((nib_to_byte newB1), b2) system
+  end.
+
+
+
 (*1NNN - Jumps to address NNN.*)
 Definition I1NNN (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
   match system with
@@ -499,6 +519,15 @@ Definition I1NNN (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
       end
     end.
 
+Lemma sameI1NNN : forall state instruction,
+  I1NNN' instruction state = I1NNN instruction state.
+Proof.
+intros.
+destruct state.
+auto.
+Qed.
+
+(*3XNN - Skips the next instruction if VX equals NN.*)
 
 
 
@@ -703,8 +732,19 @@ Compute map to_nat (exec'' (x61, x09) registersStart).
 Compute map to_nat (exec'' (x80, x14) (exec'' (x61, x09) registersStart)).
 
 Import MainSystem.
-Definition startingState := makeCHIP8 (x00,x00) (x00,x00) registersStart registersStart 0 [].
+Definition startingState := makeCHIP8 (x00,x00) (x00,x00) registersStart [(x00, x00)] 0 [].
 
 (* Set PC to x303*)
 Compute I1NNN (x13, x03) startingState.
 
+Compute setPC (x40, x40) startingState.
+
+(* Address in the stack is 0x0505. If we pop it we should get our PC = x0505
+    Note - the stack list isn't cleared. It's technically not needed because we would overwrite it when we next push
+    but still it's worth looking into if it's needed. Nothing else looks at the stack except the push/pop functions
+*)
+Definition poppableState := makeCHIP8 (x00,x00) (x00,x00) registersStart [(x05, x05)] 1 [].
+
+Compute popStack poppableState.
+
+Compute pushStack (x09, x09) startingState.
