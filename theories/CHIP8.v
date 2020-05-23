@@ -61,7 +61,7 @@ Compute map to_nat (exec'' (x61, x09) registersStart).
 Compute map to_nat (exec'' (x80, x14) (exec'' (x61, x09) registersStart)).
 
 Import MainSystem.
-Definition startingState := makeCHIP8 (x00,x00) (x00,x00) registersStart registersStart 0 [].
+Definition startingState := makeCHIP8 (x00,x00) (x00,x00) registersStart [] 0 [].
 
 (* Set PC to x303*)
 Compute I1NNN (x13, x03) startingState.
