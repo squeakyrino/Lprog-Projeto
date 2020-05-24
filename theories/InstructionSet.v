@@ -225,6 +225,7 @@ match instruction with
   - 8XY7
   - 8XYE
   *)
+  
 (*9XY0 - Skips the next instruction if VX doesn't equal VY. (Usually the next instruction is a jump to skip a code block)*)
 Definition I9XY0 (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
   I5AndI9Base neqb instruction system.
@@ -237,6 +238,19 @@ Definition IANNN (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
                  let val := ((nib_to_byte newB1), b2) in
                  incrementPCBy2 (setIRegister val system)
   end.
+
+(*BNNN - Jumps to the address NNN plus V0.*)
+Definition IBNNN (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
+  match instruction with
+    |(b1, b2) => let (_, n2) := byte_to_nib b1 in
+                 let truncatedHighByte := nib_to_byte (n0, n2) in 
+                 let truncatedNNN := (truncatedHighByte, b2) in
+                 let truncatedNNNAsNat := word_to_nat truncatedNNN in
+                  (*Get value of v0 as a nat*)
+                 let numVX := to_nat (nth 0 system.(registers) x00) in
+                 setPC (nat_to_word (truncatedNNNAsNat + numVX)) system
+  end.
+  
 (*
 Fixpoint exec (instruction : byte * byte) (registers : list byte) : list byte :=
   match instruction with
@@ -287,6 +301,7 @@ Fixpoint exec'' (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
    | (n8,_),(_,n4) => I8XY4 instruction system
    | (n9,_),(_,n0) => I9XY0 instruction system
    | (na,_),(_,_)  => IANNN instruction system
+   | (nb,_),(_,_)  => IBNNN instruction system
    |  _    ,    _  => system
    end
   end.
