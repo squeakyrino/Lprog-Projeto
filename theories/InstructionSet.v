@@ -16,9 +16,10 @@ Definition I00EE (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
 (*1NNN - Jumps to address NNN. Using record update*)
 Definition I1NNN (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
   match instruction with
-    |(b1, b2) => let (n1, n2) := byte_to_nib b1 in
-                 let newB1 := (n0, n2) in 
-                 setPC ((nib_to_byte newB1), b2) system
+    |(b1, b2) => let (_, n2) := byte_to_nib b1 in
+                 let truncatedHighByte := nib_to_byte (n0, n2) in 
+                 let truncatedNNN := (truncatedHighByte, b2) in
+                 setPC truncatedNNN system
   end.
 
 (*1NNN - Jumps to address NNN.*)
@@ -294,9 +295,9 @@ Fixpoint exec'' (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
    | (n5,_),(_,n0) => I5XY0 instruction system
    | (n6,_),(_,_)  => I6XNN instruction system
    | (n7,_),(_,_)  => I7XNN instruction system
-   | (n8,_),(_,n0) => I8XY0 instruction system                            
-   | (n8,_),(_,n1) => I8XY1 instruction system                          
-   | (n8,_),(_,n2) => I8XY2 instruction system                          
+   | (n8,_),(_,n0) => I8XY0 instruction system
+   | (n8,_),(_,n1) => I8XY1 instruction system
+   | (n8,_),(_,n2) => I8XY2 instruction system
    | (n8,_),(_,n3) => I8XY3 instruction system
    | (n8,_),(_,n4) => I8XY4 instruction system
    | (n9,_),(_,n0) => I9XY0 instruction system
@@ -306,10 +307,20 @@ Fixpoint exec'' (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
    end
   end.
 
-(*
-Fixpoint exec_step (system : CHIP8) (step : nat) : CHIP8 :=
-  match nat with
+(*Exec_step: each full instruction subtracts 1 from the i parameter. Is there a way to know if a program finished?
+  Not really. In the original machine, the programs usually just loop forever when they are finished. Unless we define
+  our own methodology to simbolise that a program is over it's not really possible.
+  There are ways to do it like writting to a place in memory below 0x200 which was reserved in the original system but it's a workaround really*)
+Fixpoint exec_step (system : CHIP8) (i : nat) : CHIP8 :=
+  match i with
     |O => system
-    |S step' => exec_ste  
-  *)
+    |S i' => let pcAsNat := word_to_nat system.(pc) in
+             (*- Read the instruction from memory
+                  TODO: use of nth with default*)
+             let mSB := nth pcAsNat system.(ram) (x00) in
+             let lSB := nth (pcAsNat + 1) system.(ram) (x00) in
+             (*Assemble the instruction*)
+             let instruction := (mSB,lSB) in
+             exec_step (exec'' instruction system) i'
+  end.
 
