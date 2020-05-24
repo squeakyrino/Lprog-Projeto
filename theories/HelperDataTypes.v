@@ -432,8 +432,8 @@ Proof.
   rewrite PeanoNat.Nat.mul_comm. rewrite PeanoNat.Nat.mod_mul ; auto.
   destruct b eqn:E ; simpl ; specialize (word_to_nat_aux b) as H' ;
   rewrite E in H' ; simpl in H' ; rewrite H' ; reflexivity.
-Qed.
-
+                                     Qed.
+                                     
 Lemma word_to_nat_be_soundness : forall w,
     nat_to_word_be (word_to_nat_be w) = w.
 Proof.
@@ -444,7 +444,7 @@ Proof.
 Qed.
                                      
 Lemma byte_to_nib_equality : forall b,
-    byte_to_nib' b = byte_to_nib b.
+    byte_to_nib' b = byte_to_nib b. 
 Proof.
   intros b.
   destruct b ; auto.
