@@ -24,7 +24,7 @@ Import RecordSetNotations.
 Definition setPC a x := x <|pc := a|>.
 
 (*Increment PC by 2. This is just a useful to have*)
-Definition incrementPCBy2 x := x <|pc := nat_to_word (add (word_to_nat x.(pc)) 2)|>.
+Definition incrementPCBy2 x := x <|pc := nat_to_word_be (add (word_to_nat_be x.(pc)) 2)|>.
 
 (*Set the I register *)
 Definition setIRegister val x := x <|i := val|>.
