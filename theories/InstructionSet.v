@@ -69,12 +69,35 @@ Definition I3AndI4Base (func : byte -> byte -> bool) (instruction : byte * byte)
 
 (*3XNN - Skips the next instruction if VX equals NN. (Usually the next instruction is a jump to skip a code block)*)
 Definition I3XNN (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
- I3AndI4Base (Byte.eqb) instruction system.                  
+ I3AndI4Base Byte.eqb instruction system.                  
 
 Definition neqb (byte1 byte2 : byte) : bool := negb (Byte.eqb byte1 byte2).
 (*4XNN - Skips the next instruction if VX doesn't equal NN. (Usually the next instruction is a jump to skip a code block)*)
 Definition I4XNN (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
  I3AndI4Base neqb instruction system.
+
+(*Another function to reduce duplicated code since I5XY0 and I9XY0 do the same but the bool check is different.
+  Like the other one, this function already increments the PC so don't increment it in the instruction functions*)
+Definition I5AndI9Base (func : byte -> byte -> bool) (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
+match instruction with
+    |(b1, b2) => let (_, n2) := byte_to_nib b1 in
+                 let vX := n_to_nat n2 in
+                 (*TODO: another use of default nth*)
+                 let byteVX := (nth vX system.(registers) x00) in
+                 let (n3,_) := byte_to_nib b2 in
+                 let vY := n_to_nat n3 in
+                 (*TODO: another use of default nth*)
+                 let byteVY := (nth vY system.(registers) x00) in
+                 if func byteVX byteVY then
+                    (*Passed the boolean check so increment the PC by 4, effectively skipping the next instruction*)
+                    incrementPCBy2 (incrementPCBy2 system)
+                 else
+                    incrementPCBy2 system
+  end.
+
+(*5XY0 - Skips the next instruction if VX equals VY. (Usually the next instruction is a jump to skip a code block)*)
+Definition I5XY0 (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
+ I5AndI9Base Byte.eqb instruction system.
 
 (*6XNN - Sets VX to NN.*)
 Definition I6XNN (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
@@ -196,6 +219,16 @@ match instruction with
                               end
   end.
 
+(*TODO:
+  - 8XY5
+  - 8XY6
+  - 8XY7
+  - 8XYE
+  *)
+(*9XY0 - Skips the next instruction if VX doesn't equal VY. (Usually the next instruction is a jump to skip a code block)*)
+Definition I9XY0 (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
+  I5AndI9Base neqb instruction system.
+
 (*ANNN - Sets I to the address NNN.*)
 Definition IANNN (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
   match instruction with
@@ -242,6 +275,9 @@ Fixpoint exec'' (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
    | (n0,n0),(ne,ne) => I00EE instruction system
    | (n1,_),(_,_)  => I1NNN instruction system
    | (n2,_),(_,_)  => I2NNN instruction system
+   | (n3,_),(_,_)  => I3XNN instruction system
+   | (n4,_),(_,_)  => I4XNN instruction system
+   | (n5,_),(_,n0) => I5XY0 instruction system
    | (n6,_),(_,_)  => I6XNN instruction system
    | (n7,_),(_,_)  => I7XNN instruction system
    | (n8,_),(_,n0) => I8XY0 instruction system                            
@@ -249,6 +285,7 @@ Fixpoint exec'' (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
    | (n8,_),(_,n2) => I8XY2 instruction system                          
    | (n8,_),(_,n3) => I8XY3 instruction system
    | (n8,_),(_,n4) => I8XY4 instruction system
+   | (n9,_),(_,n0) => I9XY0 instruction system
    | (na,_),(_,_)  => IANNN instruction system
    |  _    ,    _  => system
    end
