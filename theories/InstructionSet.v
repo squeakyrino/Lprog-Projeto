@@ -8,7 +8,7 @@ From CHIP8 Require Import HelperDataTypes.
 From CHIP8 Require Import MainMemory.
 From CHIP8 Require Import MainSystem.
 
-(*00EE - Returns from a subroutine. (Also increment the PC)*)
+(*00EE - Returns from a subroutine. (Also increment the PC because the PC we popped is the call instruction)*)
 Definition I00EE (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
     incrementPCBy2 (popStack system).
 
@@ -52,6 +52,29 @@ Definition I2NNN (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
                  setPC resultAddress (pushStack system)
   end.
 
+(*Simple function to avoid duplicating code since the I3XNN and I4XNN do the same but have different boolean conditions.
+  This increments the PC already so don't increment the PC on the actual instruction functions*)
+Definition I3AndI4Base (func : byte -> byte -> bool) (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
+ match instruction with
+    |(b1, b2) => let (_, n2) := byte_to_nib b1 in
+                 let vX := n_to_nat n2 in
+                 (*TODO: another use of default nth*)
+                 let byteVX := (nth vX system.(registers) x00) in
+                 if func byteVX b2 then
+                    (*Passed the boolean check so increment the PC by 4, effectively skipping the next instruction*)
+                    incrementPCBy2 (incrementPCBy2 system)
+                 else
+                 incrementPCBy2 system
+  end.
+
+(*3XNN - Skips the next instruction if VX equals NN. (Usually the next instruction is a jump to skip a code block)*)
+Definition I3XNN (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
+ I3AndI4Base (Byte.eqb) instruction system.                  
+
+Definition neqb (byte1 byte2 : byte) : bool := negb (Byte.eqb byte1 byte2).
+(*4XNN - Skips the next instruction if VX doesn't equal NN. (Usually the next instruction is a jump to skip a code block)*)
+Definition I4XNN (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
+ I3AndI4Base neqb instruction system.
 
 (*6XNN - Sets VX to NN.*)
 Definition I6XNN (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
@@ -61,7 +84,7 @@ Definition I6XNN (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
                  let (n3, n4) := byte_to_nib b2 in
                  let vY := n_to_nat n3 in
                  let updatedRegisters := write_memory b2 vX system.(registers) in
-                 updateRegisters updatedRegisters system
+                 incrementPCBy2 (updateRegisters updatedRegisters system)
   end.   
 
 (*7XNN - 	Adds NN to VX. (Carry flag is not changed)*)
@@ -78,7 +101,7 @@ Definition I7XNN (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
                     |None => system
                     (*write to VX*)
                     |Some x => let updatedRegisters := write_memory x vX system.(registers) in
-                                updateRegisters updatedRegisters system
+                                  incrementPCBy2 (updateRegisters updatedRegisters system)
                     end
   end.
 
@@ -91,7 +114,7 @@ Definition I8XY0 (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
                  let vY := n_to_nat n3 in
                   (* TODO: nth function requires a default value. I think we should replace it with nth_error for now to help in debugging.*)
                   let updatedRegisters := write_memory (nth vY system.(registers) x00) vX system.(registers) in
-                      updateRegisters updatedRegisters system
+                      incrementPCBy2 (updateRegisters updatedRegisters system)
   end.
 
 (*Sets VX to VX or VY. (Bitwise OR operation) *)
@@ -108,7 +131,7 @@ Definition I8XY1 (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
                  let or_x_y_as_Bvector := y_value_as_Bvector ^| x_value_as_Bvector in 
                  let or_x_y_as_byte := Bvector_to_byte or_x_y_as_Bvector in 
                  let updatedRegisters := write_memory or_x_y_as_byte vX system.(registers) in
-                 updateRegisters updatedRegisters system
+                 incrementPCBy2 (updateRegisters updatedRegisters system)
   end.
   
 (*I8XY2 - Sets VX to VX and VY. (Bitwise AND operation) *)
@@ -125,7 +148,7 @@ Definition I8XY2 (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
                  let and_x_y_as_Bvector := y_value_as_Bvector ^& x_value_as_Bvector in 
                  let and_x_y_as_byte := Bvector_to_byte and_x_y_as_Bvector in 
                  let updatedRegisters := write_memory and_x_y_as_byte vX system.(registers) in
-                 updateRegisters updatedRegisters system
+                 incrementPCBy2 (updateRegisters updatedRegisters system)
   end.
   
 (*I8XY3 - Sets VX to VX xor VY.*)
@@ -142,7 +165,7 @@ Definition I8XY3 (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
                  let xor_x_y_as_Bvector := BVxor 8 y_value_as_Bvector x_value_as_Bvector in 
                  let xor_x_y_as_byte := Bvector_to_byte xor_x_y_as_Bvector in 
                  let updatedRegisters := write_memory xor_x_y_as_byte vX system.(registers) in
-                 updateRegisters updatedRegisters system
+                 incrementPCBy2 (updateRegisters updatedRegisters system)
   end.
 
 (*8XY4 - Adds VY to VX. VF is set to 1 when there's a carry, and to 0 when there isn't.*)
@@ -163,10 +186,10 @@ match instruction with
                               |Some x =>  match of_nat addition with
                                           (*If we get a None that means there was overflow, set VF to 1*)
                                           |None => let registersWithoutOF := write_memory x vX (write_memory x01 15 system.(registers)) in
-                                                   updateRegisters registersWithoutOF system 
+                                                   incrementPCBy2 (updateRegisters registersWithoutOF system)
                                           (*Else put VF to 0*)
                                           |Some _ => let registersWithOF := write_memory x vX (write_memory x00 15 system.(registers)) in
-                                                     updateRegisters registersWithOF system 
+                                                     incrementPCBy2 (updateRegisters registersWithOF system) 
                                           end
                                           
                               
@@ -179,7 +202,7 @@ Definition IANNN (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
     |(b1, b2) => let (n1, n2) := byte_to_nib b1 in
                  let newB1 := (n0, n2) in 
                  let val := ((nib_to_byte newB1), b2) in
-                 setIRegister val system
+                 incrementPCBy2 (setIRegister val system)
   end.
 (*
 Fixpoint exec (instruction : byte * byte) (registers : list byte) : list byte :=
