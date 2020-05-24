@@ -375,7 +375,7 @@ Definition Bvector_to_byte (bv : Bvector 8) : byte :=
     | _ => x00
   end.
 
-Definition word_to_nat (bv : (byte * byte)) : nat :=
+Definition word_to_nat_le (bv : (byte * byte)) : nat :=
   match bv with
   | (b1, b2) =>
     let n1 := to_nat b1 in
@@ -383,7 +383,12 @@ Definition word_to_nat (bv : (byte * byte)) : nat :=
     n1 + n2
   end.
 
-Definition nat_to_word (n : nat) : (byte * byte) :=
+Definition word_to_nat_be (bv : (byte * byte)) : nat :=
+  match bv with
+  | (b1, b2) => word_to_nat_le (b2, b1)
+  end.
+
+Definition nat_to_word_le (n : nat) : (byte * byte) :=
   let d := div n 256 in
   let r := modulo n 256 in
   match of_nat r with
@@ -393,6 +398,12 @@ Definition nat_to_word (n : nat) : (byte * byte) :=
     | None => (x00,x00)
     | Some x2 => (x1, x2)
     end
+  end.
+
+Definition nat_to_word_be (n : nat) : (byte * byte) :=
+  let nat_to_le := nat_to_word_le n in
+  match nat_to_le with
+    (a,b) => (b,a)
   end.
 
 Lemma to_nat_less_256 : forall b,
@@ -410,21 +421,28 @@ Proof.
   simpl. apply of_to_nat. 
 Qed.
   
-Lemma word_to_nat_soundness : forall w,
-    nat_to_word (word_to_nat w) = w.
+Lemma word_to_nat_le_soundness : forall w,
+    nat_to_word_le (word_to_nat_le w) = w.
 Proof.
   intro w. destruct w.
-  unfold word_to_nat.
-  unfold nat_to_word.
-  Search "mod". rewrite PeanoNat.Nat.add_mod ; auto.
-  Search "mod". specialize (PeanoNat.Nat.mod_mul (to_nat b0) 256) as H.
+  unfold word_to_nat_le.
+  unfold nat_to_word_le.
+  rewrite PeanoNat.Nat.add_mod ; auto.
+  specialize (PeanoNat.Nat.mod_mul (to_nat b0) 256) as H.
   rewrite PeanoNat.Nat.mul_comm. rewrite PeanoNat.Nat.mod_mul ; auto.
   destruct b eqn:E ; simpl ; specialize (word_to_nat_aux b) as H' ;
   rewrite E in H' ; simpl in H' ; rewrite H' ; reflexivity.
 Qed.
 
-of_nat ((to_nat b) mod 256) = Some b
-
+Lemma word_to_nat_be_soundness : forall w,
+    nat_to_word_be (word_to_nat_be w) = w.
+Proof.
+  intro w. destruct w.
+  unfold word_to_nat_be.
+  unfold nat_to_word_be.
+  rewrite word_to_nat_le_soundness. reflexivity.
+Qed.
+                                     
 Lemma byte_to_nib_equality : forall b,
     byte_to_nib' b = byte_to_nib b.
 Proof.
