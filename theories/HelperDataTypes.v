@@ -416,7 +416,7 @@ Qed.
 Lemma word_to_nat_aux : forall b b0, 
   of_nat ((to_nat b + to_nat b0 * 256) / 256) = Some b0.
 Proof.
-  intros. Search div. rewrite Nat.div_add ; auto.
+  intros. rewrite Nat.div_add ; auto.
   rewrite Nat.div_small ; [|destruct b ; simpl ; omega].
   simpl. apply of_to_nat. 
 Qed.
