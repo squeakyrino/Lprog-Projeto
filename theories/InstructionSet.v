@@ -246,10 +246,10 @@ Definition IBNNN (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
     |(b1, b2) => let (_, n2) := byte_to_nib b1 in
                  let truncatedHighByte := nib_to_byte (n0, n2) in 
                  let truncatedNNN := (truncatedHighByte, b2) in
-                 let truncatedNNNAsNat := word_to_nat truncatedNNN in
+                 let truncatedNNNAsNat := word_to_nat_be truncatedNNN in
                   (*Get value of v0 as a nat*)
                  let numVX := to_nat (nth 0 system.(registers) x00) in
-                 setPC (nat_to_word (truncatedNNNAsNat + numVX)) system
+                 setPC (nat_to_word_be (truncatedNNNAsNat + numVX)) system
   end.
   
 (*
@@ -314,7 +314,7 @@ Fixpoint exec'' (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
 Fixpoint exec_step (system : CHIP8) (i : nat) : CHIP8 :=
   match i with
     |O => system
-    |S i' => let pcAsNat := word_to_nat system.(pc) in
+    |S i' => let pcAsNat := word_to_nat_be system.(pc) in
              (*- Read the instruction from memory
                   TODO: use of nth with default*)
              let mSB := nth pcAsNat system.(ram) (x00) in
