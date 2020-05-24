@@ -4,6 +4,7 @@ From CHIP8 Require Import MainMemory.
 From CHIP8 Require Import HelperDataTypes.
 From RecordUpdate Require Import RecordSet.
 
+(*Everything is stored in big-endian format*)
 Record CHIP8 : Set := makeCHIP8  {
   pc : (byte * byte); (* Program Counter *)
   i : (byte * byte);  (* I register *)
