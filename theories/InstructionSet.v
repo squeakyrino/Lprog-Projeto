@@ -251,7 +251,69 @@ Definition IBNNN (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
                  let numVX := to_nat (nth 0 system.(registers) x00) in
                  setPC (nat_to_word_be (truncatedNNNAsNat + numVX)) system
   end.
+
+(*Helper function: writes in memory address I + vX the value of vX*)
+Fixpoint writeRegistersInMemory (vX : nat) (system : CHIP8) : CHIP8 :=
+  match vX with
+          (*TODO: use of nth*)
+  |S vX' => let numVX := nth vX' system.(registers) (x00) in
+            let address := (word_to_nat_be system.(i)) + vX' in
+            let updatedRam := write_memory numVX address system.(ram) in
+            let updatedSystem := updateRam updatedRam system in
+            writeRegistersInMemory vX' updatedSystem
+            
+  |0 =>     let numV0 := nth 0 system.(registers) (x00) in
+            let address := (word_to_nat_be system.(i)) in
+            let updatedRam := write_memory numV0 address system.(ram) in
+            let updatedSystem := updateRam updatedRam system in
+            updatedSystem
+  end.
   
+  
+  
+(*FX55 - Stores V0 to VX (including VX) in memory starting at address I. 
+         The offset from I is increased by 1 for each value written.
+         In the original CHIP-8 the I register is incremented by 1 everytime we write to memory.
+         In the SCHIP implementation the I register is left unmodified.
+         This instruction will follow the original CHIP8 implementation*)
+Definition IFX55 (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
+  match instruction with
+    |(b1, _) => let (_, n2) := byte_to_nib b1 in
+                let counter := (n_to_nat n2) + 1 in
+                let newIRegister := nat_to_word_be ((word_to_nat_be system.(i)) + counter) in
+                setIRegister newIRegister (writeRegistersInMemory counter system)
+  end.
+
+Fixpoint readMemoryToRegisters (vX : nat) (system : CHIP8) : CHIP8 :=
+  match vX with
+          (*TODO: use of nth*)
+  |S vX' => let address := (word_to_nat_be system.(i)) + vX' in
+            let memoryByte := nth address system.(ram) (x00) in
+            let updatedRegisters := write_memory memoryByte vX' system.(registers) in
+            let updatedSystem := updateRegisters updatedRegisters system in
+            readMemoryToRegisters vX' updatedSystem
+            
+  |0 =>     let address := (word_to_nat_be system.(i)) in
+            let memoryByte := nth address system.(ram) (x00) in
+            let updatedRegisters := write_memory memoryByte 0 system.(registers) in
+            let updatedSystem := updateRegisters updatedRegisters system in
+            updatedSystem
+  end.
+  
+  
+(*FX65 - Fills V0 to VX (including VX) with values from memory starting at address I. 
+         The offset from I is increased by 1 for each value written.
+         In the original CHIP-8 the I register is incremented by 1 everytime we read from memory.
+         In the SCHIP implementation the I register is left unmodified.
+         This instruction will follow the original CHIP8 implementation*)
+Definition IFX65 (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
+  match instruction with
+    |(b1, _) => let (_, n2) := byte_to_nib b1 in
+                let counter := (n_to_nat n2) + 1 in
+                let newIRegister := nat_to_word_be ((word_to_nat_be system.(i)) + counter) in
+                setIRegister newIRegister (readMemoryToRegisters counter system)
+  end. 
+
 (*
 Fixpoint exec (instruction : byte * byte) (registers : list byte) : list byte :=
   match instruction with
@@ -303,6 +365,8 @@ Fixpoint exec'' (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
    | (n9,_),(_,n0) => I9XY0 instruction system
    | (na,_),(_,_)  => IANNN instruction system
    | (nb,_),(_,_)  => IBNNN instruction system
+   | (nf,_),(n5,n5)=> IFX55 instruction system
+   | (nf,_),(n6,n5)=> IFX65 instruction system
    |  _    ,    _  => system
    end
   end.

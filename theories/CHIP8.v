@@ -83,3 +83,22 @@ Compute pushStack startingState.
 
 (* 2NNN - Testing it. *)
 Compute I2NNN (x20,x12) startingState.
+
+(*BNNN testing*)
+Definition IBNNNStartState := makeCHIP8 (x00,x00) (x00,x00) [x01] [] 0 [].
+
+Compute IBNNN (xb1, x02) IBNNNStartState.
+
+(*IFX55 - Testing!*)
+Definition IFX55State := makeCHIP8 (x00,x00) (x00,x00) [x01;x02;x03;x04;x05;x06;x07;x08;x09;x0a;x0b;x0c;x0d;x0e;x0f;x10] 
+                                [] 0 init_memory.
+                                
+Compute IFX55 (xff, x55) IFX55State.
+
+(*IFX65 - Testing!*)
+Definition IFX65State := makeCHIP8 (x00,x00) (x00,x03) (init_memory' 16) 
+                                [] 0 (app (init_memory' 5) 
+                                [x01;x02;x03;x04;x05;x06;x07;x08;x09;x0a;x0b;x0c;x0d;x0e;x0f;x10]).
+
+Compute IFX65 (xff, x65) IFX65State.
+
