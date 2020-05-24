@@ -39,3 +39,5 @@ Definition popStack x := x <|stackPointer ::= sub 1|>
 (*Push the current PC into the stack and then increase stackpointer*)
 Definition pushStack (x : CHIP8) := x <|stackPointer ::= succ|> 
                             <|stack := write_memory x.(pc) x.(stackPointer) x.(stack)|>.
+
+Definition updateRam (newRam : list byte) (x : CHIP8) := x <|ram := newRam|>.
