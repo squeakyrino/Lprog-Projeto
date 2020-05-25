@@ -3,11 +3,14 @@ Require Import Coq.Lists.List.
 Require Import Coq.Init.Nat.
 Import ListNotations.
 
-Fixpoint init_memory' (n : nat) : list byte :=
+Fixpoint create_list {A : Type} (default : A) (n : nat) : list A :=
   match n with
     |0 => []
-    |S n' => x00 :: init_memory' n'
+    |S n' => default :: create_list default n'
   end.
+
+Fixpoint init_memory' (n : nat) : list byte :=
+  create_list (x00) n.
 
 Definition init_memory : list byte :=
   init_memory'  4096.

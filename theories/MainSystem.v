@@ -14,6 +14,10 @@ Record CHIP8 : Set := makeCHIP8  {
   ram : list byte; (* Program instructions*) 
 }.
 
+(*Defining an initial state for CHIP8 without ram*)
+Definition CHIP8InitialStateEmptyRam :=
+  makeCHIP8 (x02,x00) (x00,x00) (create_list (x00) 16) (create_list (x00,x00) 16) 0 init_memory.
+  
 (* This is needed for the record update library *)
 Instance etaX : Settable _ := settable! makeCHIP8 <pc; i; registers; stack; stackPointer; ram>.
 
