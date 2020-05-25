@@ -1,13 +1,15 @@
 Require Import Coq.Init.Byte Coq.Strings.Byte Coq.Bool.Bvector.
 Require Import Coq.Lists.List.
 Require Import Coq.Init.Nat.
-Import ListNotations.
-Import BvectorNotations.
 
 From CHIP8 Require Import HelperDataTypes.
 From CHIP8 Require Import MainMemory.
 From CHIP8 Require Import MainSystem.
 
+Section InstructionSetCode.
+
+Import BvectorNotations.
+  
 (*00EE - Returns from a subroutine. (Also increment the PC because the PC we popped is the call instruction)*)
 Definition I00EE (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
     incrementPCBy2 (popStack system).
@@ -33,15 +35,6 @@ Definition I1NNN' (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
                       stack := stack'; stackPointer := stackPointer'; ram := ram'|}
       end
     end.
-
-(* Proving both functions do the same *) 
-Lemma sameI1NNN : forall state instruction,
-  I1NNN' instruction state = I1NNN instruction state.
-Proof.
-intros.
-destruct state.
-auto.
-Qed.
 
 (* 2NNN - Calls subroutine at NNN. *)
 Definition I2NNN (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
@@ -178,9 +171,9 @@ Definition I8XY2 (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
 (*I8XY3 - Sets VX to VX xor VY.*)
 Definition I8XY3 (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
   match instruction with
-    |(b1, b2) => let (n1, n2) := byte_to_nib b1 in
+    |(b1, b2) => let (_, n2) := byte_to_nib b1 in
                  let vX := n_to_nat n2 in
-                 let (n3, n4) := byte_to_nib b2 in
+                 let (_, n4) := byte_to_nib b2 in
                  let vY := n_to_nat n3 in
                  let register_y_value := (nth vY system.(registers) x00) in 
                  let register_x_value := (nth vX system.(registers) x00) in
@@ -195,9 +188,9 @@ Definition I8XY3 (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
 (*8XY4 - Adds VY to VX. VF is set to 1 when there's a carry, and to 0 when there isn't.*)
 Definition I8XY4 (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
 match instruction with
-    |(b1, b2) => let (n1, n2) := byte_to_nib b1 in
+    |(b1, b2) => let (_, n2) := byte_to_nib b1 in
                  let vX := n_to_nat n2 in
-                 let (n3, n4) := byte_to_nib b2 in
+                 let (_, n4) := byte_to_nib b2 in
                  let vY := n_to_nat n3 in
                  (* Another use of nth. Read the value from register VX in nat*)
                  let numVX := to_nat (nth vX system.(registers) x00) in
@@ -314,15 +307,6 @@ Definition IFX65 (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
                 setIRegister newIRegister (readMemoryToRegisters counter system)
   end. 
 
-Section InstructionSetNotation.
-Check write_instruction_nib.
-Notation "( vx := vy )" := (write_instruction_nib (n8,register_to_nib vx,register_to_nib vy,n0)).
-Notation "( inst1 ; inst2 )" := (fun addr system => inst2 (S (S addr)) (inst1 addr system)).
-
-Check ( (v4 := v5) ; (v2 := v5) ).
-
-End InstructionSetNotation.
-
 Fixpoint exec'' (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
   match instruction with
   |(e1, e2) =>
@@ -365,4 +349,57 @@ Fixpoint exec_step (system : CHIP8) (i : nat) : CHIP8 :=
              let instruction := (mSB,lSB) in
              exec_step (exec'' instruction system) i'
   end.
+
+End InstructionSetCode.
+
+Section InstructionSetNotation.
+
+Import ListNotations.
+  
+Notation "( ret )" := (write_instruction_nib (n0,n0,ne,ne)).
+  
+Notation "( jump to n1' n2' n3' )" := (write_instruction_nib (n1,n1',n2',n3')).
+
+Notation "( call n1' n2' n3' )" := (write_instruction_nib (n2,n1',n2',n3')).
+
+Notation "( skip if vx equal to n2' n3' )" := (write_instruction_nib (n3, register_to_nib vx,n2',n3')).
+
+Notation "( skip if vx not equal to n2' n3' )" := (write_instruction_nib (n4, register_to_nib vx,n2',n3')).
+
+Notation "( skip if vx equal vy )" := (write_instruction_nib (n5, register_to_nib vx,register_to_nib vy,n0)).
+
+Notation "( vx := n1' n2' )" := (write_instruction_nib (n6, register_to_nib vx, n1',n2')).
+
+Notation "( vx :=+ n1' n2' )" := (write_instruction_nib (n7, register_to_nib vx, n1',n2')).
+
+Notation "( vx := vy )" := (write_instruction_nib (n8,register_to_nib vx,register_to_nib vy,n0)).
+Notation "( vx :=\/ vy )" := (write_instruction_nib (n8,register_to_nib vx,register_to_nib vy,n1)).
+Notation "( vx :=/\ vy )" := (write_instruction_nib (n8,register_to_nib vx,register_to_nib vy,n2)).
+Notation "( vx :=(+) vy )" := (write_instruction_nib (n8,register_to_nib vx,register_to_nib vy,n3)).
+Notation "( vx :=+ vy )" := (write_instruction_nib (n8,register_to_nib vx,register_to_nib vy,n4)).
+
+Notation "( skip if vx not equal to vy )" := (write_instruction_nib (n9,register_to_nib vx,register_to_nib vy,n0)).
+
+Notation "( i := n1' n2' n3' )" := (write_instruction_nib (na,n1',n2',n3')).
+
+Notation "( jump+v0 n1' n2' n3' )" := (write_instruction_nib (nb,n1',n2',n3')).
+
+Notation "( fill vx )" := (write_instruction_nib (nf,register_to_nib vx,n5,n5)).
+
+Notation "inst1 ;; inst2" := (fun addr system => inst2 (S (S addr)) (inst1 addr system)) (at level 80, right associativity).
+
+End InstructionSetNotation.
+
+Section InstructionSetProofs.
+
+  (* Proving both functions do the same *) 
+  Lemma sameI1NNN : forall state instruction,
+    I1NNN' instruction state = I1NNN instruction state.
+  Proof.
+    intros.
+    destruct state.
+    auto.
+  Qed.
+
+End InstructionSetProofs.
 
