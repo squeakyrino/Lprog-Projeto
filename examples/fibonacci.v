@@ -37,7 +37,7 @@ Definition fibonacci_n_chip8 n :=
 Definition CHIP_prog prog :=
   updateRam (prog 512 init_memory) CHIP8InitialStateEmptyRam.
 
-Example sum_to_10_prog : forall n,
+Example fib_prog : forall n,
     fibonacci (n_to_nat n) < 256 -> 
     Some (nth 1 (exec_step (CHIP_prog (fibonacci_n_chip8 n)) 2000).(registers) x00)
     =
