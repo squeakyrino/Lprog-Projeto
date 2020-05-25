@@ -74,11 +74,11 @@ Definition I4XNN (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
   Like the other one, this function already increments the PC so don't increment it in the instruction functions*)
 Definition I5AndI9Base (func : byte -> byte -> bool) (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
 match instruction with
-    |(b1, b2) => let (_, n2) := byte_to_nib b1 in
+    |(b1, b2) => let (n1, n2) := byte_to_nib b1 in
                  let vX := n_to_nat n2 in
                  (*TODO: another use of default nth*)
                  let byteVX := (nth vX system.(registers) x00) in
-                 let (n3,_) := byte_to_nib b2 in
+                 let (n3,n4) := byte_to_nib b2 in
                  let vY := n_to_nat n3 in
                  (*TODO: another use of default nth*)
                  let byteVY := (nth vY system.(registers) x00) in
@@ -171,9 +171,9 @@ Definition I8XY2 (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
 (*I8XY3 - Sets VX to VX xor VY.*)
 Definition I8XY3 (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
   match instruction with
-    |(b1, b2) => let (_, n2) := byte_to_nib b1 in
+    |(b1, b2) => let (n1, n2) := byte_to_nib b1 in
                  let vX := n_to_nat n2 in
-                 let (_, n4) := byte_to_nib b2 in
+                 let (n3, n4) := byte_to_nib b2 in
                  let vY := n_to_nat n3 in
                  let register_y_value := (nth vY system.(registers) x00) in 
                  let register_x_value := (nth vX system.(registers) x00) in
@@ -188,9 +188,9 @@ Definition I8XY3 (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
 (*8XY4 - Adds VY to VX. VF is set to 1 when there's a carry, and to 0 when there isn't.*)
 Definition I8XY4 (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
 match instruction with
-    |(b1, b2) => let (_, n2) := byte_to_nib b1 in
+    |(b1, b2) => let (n1, n2) := byte_to_nib b1 in
                  let vX := n_to_nat n2 in
-                 let (_, n4) := byte_to_nib b2 in
+                 let (n3, n4) := byte_to_nib b2 in
                  let vY := n_to_nat n3 in
                  (* Another use of nth. Read the value from register VX in nat*)
                  let numVX := to_nat (nth vX system.(registers) x00) in
