@@ -364,7 +364,7 @@ Notation "( 'skip' 'if' vx 'equal' 'to' ng ::: nh )" := (write_instruction_nib (
 
 Notation "( 'skip' 'if' vx 'not' 'equal' 'to' ng nh )" := (write_instruction_nib (n4, register_to_nib vx,ng,nh)).
 
-Notation "( 'skip' 'if' vx 'equal' vy )" := (write_instruction_nib (n5, register_to_nib vx,register_to_nib vy,n0)).
+Notation "( 'skip' 'if' vx 'equal' 'to' vy )" := (write_instruction_nib (n5, register_to_nib vx,register_to_nib vy,n0)).
 
 Notation "( vx := ng ::: nh )" := (write_instruction_nib (n6, register_to_nib vx, ng, nh)).
 
