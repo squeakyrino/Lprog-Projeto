@@ -352,25 +352,23 @@ Fixpoint exec_step (system : CHIP8) (i : nat) : CHIP8 :=
 
 End InstructionSetCode.
 
-Section InstructionSetNotation.
-
-Import ListNotations.
+Module InstructionSetNotation.
   
-Notation "( ret )" := (write_instruction_nib (n0,n0,ne,ne)).
-  
-Notation "( jump to n1' n2' n3' )" := (write_instruction_nib (n1,n1',n2',n3')).
+Notation "( 'ret' )" := (write_instruction_nib (n0,n0,ne,ne)).
 
-Notation "( call n1' n2' n3' )" := (write_instruction_nib (n2,n1',n2',n3')).
+Notation "( 'jump' 'to' ng ::: nh ::: ni )" := (write_instruction_nib (n1,ng,nh,ni)).
 
-Notation "( skip if vx equal to n2' n3' )" := (write_instruction_nib (n3, register_to_nib vx,n2',n3')).
+Notation "( 'call' ng ::: nh ::: ni )" := (write_instruction_nib (n2,ng,nh,ni)).
 
-Notation "( skip if vx not equal to n2' n3' )" := (write_instruction_nib (n4, register_to_nib vx,n2',n3')).
+Notation "( 'skip' 'if' vx 'equal' 'to' ng ::: nh )" := (write_instruction_nib (n3, register_to_nib vx,ng,nh)).
 
-Notation "( skip if vx equal vy )" := (write_instruction_nib (n5, register_to_nib vx,register_to_nib vy,n0)).
+Notation "( 'skip' 'if' vx 'not' 'equal' 'to' ng nh )" := (write_instruction_nib (n4, register_to_nib vx,ng,nh)).
 
-Notation "( vx := n1' n2' )" := (write_instruction_nib (n6, register_to_nib vx, n1',n2')).
+Notation "( 'skip' 'if' vx 'equal' vy )" := (write_instruction_nib (n5, register_to_nib vx,register_to_nib vy,n0)).
 
-Notation "( vx :=+ n1' n2' )" := (write_instruction_nib (n7, register_to_nib vx, n1',n2')).
+Notation "( vx := ng ::: nh )" := (write_instruction_nib (n6, register_to_nib vx, ng, nh)).
+
+Notation "( vx :=+ ng ::: nh )" := (write_instruction_nib (n7, register_to_nib vx, ng, nh)).
 
 Notation "( vx := vy )" := (write_instruction_nib (n8,register_to_nib vx,register_to_nib vy,n0)).
 Notation "( vx :=\/ vy )" := (write_instruction_nib (n8,register_to_nib vx,register_to_nib vy,n1)).
@@ -378,18 +376,20 @@ Notation "( vx :=/\ vy )" := (write_instruction_nib (n8,register_to_nib vx,regis
 Notation "( vx :=(+) vy )" := (write_instruction_nib (n8,register_to_nib vx,register_to_nib vy,n3)).
 Notation "( vx :=+ vy )" := (write_instruction_nib (n8,register_to_nib vx,register_to_nib vy,n4)).
 
-Notation "( skip if vx not equal to vy )" := (write_instruction_nib (n9,register_to_nib vx,register_to_nib vy,n0)).
+Notation "( 'skip' 'if' vx 'not' 'equal' 'to' vy )" := (write_instruction_nib (n9,register_to_nib vx,register_to_nib vy,n0)).
 
-Notation "( i := n1' n2' n3' )" := (write_instruction_nib (na,n1',n2',n3')).
+Notation "( i := ng ::: nh ::: ni )" := (write_instruction_nib (na,ng, nh, ni)).
 
-Notation "( jump+v0 n1' n2' n3' )" := (write_instruction_nib (nb,n1',n2',n3')).
+Notation "( 'jumpv0' 'to' ng ::: nh ::: ni )" := (write_instruction_nib (nb,ng,nh,ni)).
 
-Notation "( fill vx )" := (write_instruction_nib (nf,register_to_nib vx,n5,n5)).
+Notation "( 'fill' vx )" := (write_instruction_nib (nf,register_to_nib vx,n5,n5)).
 
 Notation "inst1 ;; inst2" := (fun addr system => inst2 (S (S addr)) (inst1 addr system)) (at level 80, right associativity).
 
 End InstructionSetNotation.
 
+Import InstructionSetNotation.
+  
 Section InstructionSetProofs.
 
   (* Proving both functions do the same *) 
