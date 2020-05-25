@@ -2,6 +2,8 @@ Require Import Coq.Init.Byte Coq.Strings.Byte Coq.Bool.Bvector.
 Require Import Coq.Init.Nat.
 Require Import Coq.omega.Omega.
 
+Section HelperDataTypesTypes.
+
 Inductive nibble :=
   |n0
   |n1
@@ -19,6 +21,28 @@ Inductive nibble :=
   |nd
   |ne
   |nf.
+
+Inductive register :=
+  |v0
+  |v1
+  |v2
+  |v3
+  |v4
+  |v5
+  |v6
+  |v7
+  |v8
+  |v9
+  |va
+  |vb
+  |vc
+  |vd
+  |ve
+  |vf.
+
+End HelperDataTypesTypes.
+
+Section HelperDataTypesCode.
 
 Definition n_to_nat (n : nibble) : nat :=
   match n with
@@ -406,6 +430,36 @@ Definition nat_to_word_be (n : nat) : (byte * byte) :=
     (a,b) => (b,a)
   end.
 
+Definition register_to_nib (r : register) :=
+  match r with
+  |v0 => n0
+  |v1 => n1
+  |v2 => n2
+  |v3 => n3
+  |v4 => n4
+  |v5 => n5
+  |v6 => n6
+  |v7 => n7
+  |v8 => n8
+  |v9 => n9
+  |va => na
+  |vb => nb
+  |vc => nc
+  |vd => nd
+  |ve => ne
+  |vf => nf
+  end.
+
+Definition nib_to_byte_low (nib : nibble) :=
+  nib_to_byte (n0, nib).
+
+Definition nib_to_byte_high (nib : nibble) :=
+  nib_to_byte (nib, n0).
+
+End HelperDataTypesCode.
+
+Section HelperDataTypesProof.
+
 Lemma to_nat_less_256 : forall b,
     to_nat b < 256.
 Proof.
@@ -464,3 +518,5 @@ Proof.
   unfold Bvector_to_byte, byte_to_Bvector.
   destruct b ; simpl ; reflexivity.
 Qed.
+
+End HelperDataTypesProof.

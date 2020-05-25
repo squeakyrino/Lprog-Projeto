@@ -314,36 +314,14 @@ Definition IFX65 (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
                 setIRegister newIRegister (readMemoryToRegisters counter system)
   end. 
 
-(*
-Fixpoint exec (instruction : byte * byte) (registers : list byte) : list byte :=
-  match instruction with
-    |(e1, e2) => let (l_nib1, r_nib1) := byte_to_nib' e1 in
-                 let (l_nib2, r_nib2) := byte_to_nib' e2 in 
-                 (*8XY0 - Much more readable now in my opinion*)
-                    if ((nib_eq l_nib1 n8) && (nib_eq r_nib2 n0)) then I8XY0 instruction registers else 
-                    if (nib_eq l_nib1 n6) then I6XNN instruction registers else
-                    [xde;xad;xbe;xef]
-  end.
+Section InstructionSetNotation.
+Check write_instruction_nib.
+Notation "( vx := vy )" := (write_instruction_nib (n8,register_to_nib vx,register_to_nib vy,n0)).
+Notation "( inst1 ; inst2 )" := (fun addr system => inst2 (S (S addr)) (inst1 addr system)).
 
-Fixpoint exec' (instruction : byte * byte) (registers : list byte) : list byte :=
-  match instruction with
-  |(e1, e2) =>
-   match byte_to_nib' e1, byte_to_nib' e2 with
-   | (n8,_),(_,n0) => I8XY0 instruction registers
-   | (n6,_),(_, _) => I6XNN instruction registers
-   |  _    ,    _  => [xde;xad;xbe;xef]
-   end
-  end.
+Check ( (v4 := v5) ; (v2 := v5) ).
 
-Theorem exec_equality : forall w lb,
-    exec w lb = exec' w lb.
-Proof.
-  intros ; destruct w.
-  unfold exec, exec' ; destruct b ; simpl ; try reflexivity ; 
-    try (destruct (byte_to_nib' b0) ; reflexivity) ;
-       try (destruct b0 ; reflexivity).
-Qed.
-*)
+End InstructionSetNotation.
 
 Fixpoint exec'' (instruction : byte * byte) (system : CHIP8) : CHIP8 :=
   match instruction with

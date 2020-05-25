@@ -3,6 +3,8 @@ Require Import Coq.Lists.List.
 Require Import Coq.Init.Nat.
 Import ListNotations.
 
+From CHIP8 Require Import HelperDataTypes.
+
 Fixpoint create_list {A : Type} (default : A) (n : nat) : list A :=
   match n with
     |0 => []
@@ -39,3 +41,10 @@ Fixpoint write_all_instructions (insts : list (byte * byte)) (address : nat) (ra
     write_all_instructions insts' (S(S(address))) new_ram
   end.
 
+Definition write_instruction_nib (inst : (nibble * nibble * nibble * nibble)) (address : nat) (ram : list byte) : list byte :=
+  match inst with
+  | (n1', n2', n3', n4') =>
+    let b1 := nib_to_byte (n1', n2') in
+    let b2 := nib_to_byte (n3', n4') in 
+    write_instruction (b1, b2) address ram
+  end.
