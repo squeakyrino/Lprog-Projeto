@@ -4,6 +4,7 @@ From CHIP8 Require Import HelperDataTypes.
 From CHIP8 Require Import MainMemory.
 From CHIP8 Require Import MainSystem.
 
+Require Import Coq.Numbers.Natural.Peano.NPeano.
 Require Import Coq.Lists.List.
 Require Import Coq.micromega.Lia.
 
@@ -26,7 +27,7 @@ Definition fibonacci_n_chip8 n :=
     (* Start of program *)
     ( skip if v4 equal to v3 ) (*if equal go to end : n8*) ;;
     ( jump to n2 ::: n0 ::: ne ) (* jump to procedure : na*) ;;
-    ( ret ) (* return point : nc *) ;;
+    ( jump to n2 ::: n0 ::: nc ) (* return point : nc *) ;;
     ( v4 :=+ n0 ::: n1 ) ;;
     ( v5 := v2 ) ;;
     ( v2 :=+ v1 ) ;;
@@ -37,29 +38,18 @@ Definition fibonacci_n_chip8 n :=
 Definition CHIP_prog prog :=
   updateRam (prog 512 init_memory) CHIP8InitialStateEmptyRam.
 
-Example fib_prog : forall n,
-    fibonacci (n_to_nat n) < 256 -> 
-    Some (nth 1 (exec_step (CHIP_prog (fibonacci_n_chip8 n)) 2000).(registers) x00)
+Example fib_prog : forall n s, exists s',
+    s > s' ->
+    Some (nth 1 (exec_step (CHIP_prog (fibonacci_n_chip8 n)) s).(registers) x00)
     =
-    of_nat (fibonacci (n_to_nat n)).
+    of_nat (modulo (fibonacci (n_to_nat n)) 256).
 Proof.
-  intros n. intro H ; destruct n eqn:E.
-  + reflexivity.
-  + reflexivity.
-  + reflexivity.
-  + reflexivity.
-  + reflexivity.
-  + reflexivity.
-  + reflexivity.
-  + reflexivity.
-  + reflexivity.
-  + reflexivity.
-  + reflexivity.
-  + reflexivity.
-  + reflexivity.
-  + reflexivity.
-  + simpl in H. lia.
-  + simpl in H. lia.
+  intros n s.
+  exists 172. intros.
+  induction H.
+  + destruct n eqn:E ; reflexivity.
+  + simpl. simpl in IHle.
+    do 173 (destruct m ; try lia).
 Qed.
 
 
