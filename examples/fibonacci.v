@@ -4,6 +4,7 @@ From CHIP8 Require Import HelperDataTypes.
 From CHIP8 Require Import MainMemory.
 From CHIP8 Require Import MainSystem.
 
+Require Import Coq.Init.Nat.
 Require Import Coq.Lists.List.
 Require Import Coq.micromega.Lia.
 
@@ -38,28 +39,11 @@ Definition CHIP_prog prog :=
   updateRam (prog 512 init_memory) CHIP8InitialStateEmptyRam.
 
 Example fib_prog : forall n,
-    fibonacci (n_to_nat n) < 256 -> 
-    Some (nth 1 (exec_step (CHIP_prog (fibonacci_n_chip8 n)) 2000).(registers) x00)
+    Some (nth 1 (exec_step (CHIP_prog (fibonacci_n_chip8 n)) 300).(registers) x00)
     =
-    of_nat (fibonacci (n_to_nat n)).
+    of_nat (modulo (fibonacci (n_to_nat n)) 256).
 Proof.
-  intros n. intro H ; destruct n eqn:E.
-  + reflexivity.
-  + reflexivity.
-  + reflexivity.
-  + reflexivity.
-  + reflexivity.
-  + reflexivity.
-  + reflexivity.
-  + reflexivity.
-  + reflexivity.
-  + reflexivity.
-  + reflexivity.
-  + reflexivity.
-  + reflexivity.
-  + reflexivity.
-  + simpl in H. lia.
-  + simpl in H. lia.
+  intros n. destruct n eqn:E ; reflexivity.
 Qed.
 
 
