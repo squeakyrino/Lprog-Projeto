@@ -378,7 +378,7 @@ Notation "( vx :=+ vy )" := (write_instruction_nib (n8,register_to_nib vx,regist
 
 Notation "( 'skip' 'if' vx 'not' 'equal' 'to' vy )" := (write_instruction_nib (n9,register_to_nib vx,register_to_nib vy,n0)).
 
-Notation "( i := ng ::: nh ::: ni )" := (write_instruction_nib (na,ng, nh, ni)).
+Notation "( 'i' := ng ::: nh ::: ni )" := (write_instruction_nib (na,ng, nh, ni)).
 
 Notation "( 'jumpv0' 'to' ng ::: nh ::: ni )" := (write_instruction_nib (nb,ng,nh,ni)).
 
